@@ -1,12 +1,12 @@
 #!/usr/bin/python
 """
-Timer - A reverse counting timer with multiple subsequent timers.
+ptimer - A reverse counting timer with multiple subsequent timers.
 
 Usage: 
-Timer.py val1 [val2 ...]
+ptimer.py val1 [val2 ...]
 
-Example: (Starts a timer for 10s and then for 15 seconds when 10s expires)
-    Timer.py 10 15
+Example: (Starts a timer for 10mins and then for 15mins when 10mins expires)
+    ptimer.py 10 15
 """
 __author__ = "Amjith Ramanujam (amjith@gmail.com)"
 __version__ = "$Revision: 0.1 $"
@@ -136,7 +136,7 @@ class Timer(QtGui.QMainWindow):
         self.resetTimer()
 
     def setTimer(self, timer_list):
-        self.alarm_times = timer_list
+        self.alarm_times = [x*60 for x in timer_list]
         self.timer_iter = cycle(self.alarm_times)    # An iterator that cycles through the list
         self.curTime = self.timer_iter.next()      # Current timer value
 
@@ -244,6 +244,11 @@ def printTest():
 
 if __name__ == "__main__":
     app = QtGui.QApplication(sys.argv)
+    if not QtGui.QSystemTrayIcon.isSystemTrayAvailable():
+        QtGui.QMessageBox.critical(None, "Systray",
+                "No system tray on this system. Fail")
+        sys.exit(1)
+    QtGui.QApplication.setQuitOnLastWindowClosed(False)
     timerList = Str2Num(sys.argv[1:])
     myapp = Timer(timerList)
     sys.exit(app.exec_())
