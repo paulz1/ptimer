@@ -1,17 +1,19 @@
 #!/usr/bin/python
 """
-ptimer - A reverse counting timer with multiple subsequent timers.
+pztimer - A reverse counting timer with multiple subsequent timers.
+Clone of ptimer project of Amjith Ramanujam (amjith@gmail.com).
+Cloned for add some additional functionality.
 
 Usage: 
-ptimer.py val1 [val2 ...]
+pztimer.py val1 [val2 ...]
 
 Example: (Starts a timer for 10mins and then for 15mins when 10mins expires)
     ptimer.py 10 15
 """
-__author__ = "Amjith Ramanujam (amjith@gmail.com)"
+__author__ = "Paul Zakharov (paul.zakharov@gmail.com)"
 __version__ = "$Revision: 0.1 $"
-__date__ = "$Date: 2010/09/12 $"
-__copyright__ = "Copyright (c) 2010, Amjith Ramanujam"
+__date__ = "$Date: 2015/06/22 $"
+__copyright__ = "Copyright (c) 2010, Amjith Ramanujam, (c) 2015 Paul Zakharov"
 
 import sys
 from itertools import cycle
