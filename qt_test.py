@@ -25,15 +25,22 @@ class Example(QtGui.QWidget):
         
     def initUI(self):
         
+        colnames = ["task","status"]
+        
         self.setGeometry(300, 300, 250, 190)
         self.setWindowTitle('Icon3')
         self.setWindowIcon(QtGui.QIcon('web.png'))        
     
         self.model = QtGui.QStandardItemModel(self)
+        self.model.setHeaderData(0, QtCore.Qt.Horizontal, colnames[0])
+        self.model.setHeaderData(1, QtCore.Qt.Horizontal, colnames[1])
+        self.model.setHorizontalHeaderLabels(colnames)
  
         self.tableView = QtGui.QTableView(self)
+        #self.tableView = QtGui.QTableWidget(self)
         self.tableView.setModel(self.model)
         self.tableView.horizontalHeader().setStretchLastSection(True)
+        #self.tableView.setHorizontalHeaderLabels(['a', 'b', 'c', 'd', 'e'])
  
         self.pushButtonLoad = QtGui.QPushButton(self)
         self.pushButtonLoad.setText("Load Csv File!")
@@ -50,21 +57,34 @@ class Example(QtGui.QWidget):
 
     def loadCsv(self, fileName):
         with open(fileName, "rb") as fileInput:
-            for row in csv.reader(fileInput):    
+            for row in csv.reader(fileInput,delimiter=';'):    
                 items = [
                     QtGui.QStandardItem(field)
                     for field in row
                 ]
                 self.model.appendRow(items)
+
+    def writeCsv(self, fileName):
+        with open(fileName, "wb") as fileOutput:
+            writer = csv.writer(fileOutput)
+            for rowNumber in range(self.model.rowCount()):
+                fields = [
+                    self.model.data(
+                        self.model.index(rowNumber, columnNumber),
+                        QtCore.Qt.DisplayRole
+                    )
+                    for columnNumber in range(self.model.columnCount())
+                ]
+                writer.writerow(fields)                
     
     @QtCore.pyqtSlot()
     def on_pushButtonWrite_clicked(self):
-        self.writeCsv(self.fileName)
+        self.writeCsv("/home/paul/.doit")
 
     @QtCore.pyqtSlot()
     def on_pushButtonLoad_clicked(self):
         #self.loadCsv(self.fileName)
-        self.loadCsv("/home/paul/Inet_Perso/0515/NFL/coaches__coaches.csv")
+        self.loadCsv("/home/paul/.doit")
         
         
 def main():
