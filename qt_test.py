@@ -25,9 +25,9 @@ class Example(QtGui.QWidget):
         
     def initUI(self):
         
-#         self.setGeometry(300, 300, 250, 150)
-#         self.setWindowTitle('Icon')
-#         self.setWindowIcon(QtGui.QIcon('web.png'))        
+        self.setGeometry(300, 300, 250, 150)
+        self.setWindowTitle('Icon3')
+        self.setWindowIcon(QtGui.QIcon('web.png'))        
     
         self.model = QtGui.QStandardItemModel(self)
  
