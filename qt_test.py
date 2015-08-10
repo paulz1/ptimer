@@ -25,48 +25,83 @@ class Example(QtGui.QWidget):
         
     def initUI(self):
         
-        colnames = ["task","status"]
+        colnames = ["task","status","created","tags"]
+        rMinusIcon = QtGui.QPixmap("Resources/button_minus_red.png")
+        rPlusIcon = QtGui.QPixmap("Resources/button_plus_green.png")
+        rLoadIcon = QtGui.QPixmap("Resources/load.png")
+        rWriteIcon = QtGui.QPixmap("Resources/write.png")        
         
-        self.setGeometry(300, 300, 250, 190)
+        self.setGeometry(300, 300, 500, 210)
         self.setWindowTitle('Icon3')
         self.setWindowIcon(QtGui.QIcon('web.png'))        
     
         self.model = QtGui.QStandardItemModel(self)
-        self.model.setHeaderData(0, QtCore.Qt.Horizontal, colnames[0])
-        self.model.setHeaderData(1, QtCore.Qt.Horizontal, colnames[1])
+        
+        for i in range(len(colnames)) :
+            self.model.setHeaderData(i, QtCore.Qt.Horizontal, colnames[i])
+        #self.model.setHeaderData(1, QtCore.Qt.Horizontal, colnames[1])
         self.model.setHorizontalHeaderLabels(colnames)
  
         self.tableView = QtGui.QTableView(self)
         #self.tableView = QtGui.QTableWidget(self)
         self.tableView.setModel(self.model)
+        self.tableView.setColumnWidth(0,250)
+        self.tableView.setColumnWidth(1,50)
+        self.tableView.setColumnWidth(2,100)
         self.tableView.horizontalHeader().setStretchLastSection(True)
         #self.tableView.setHorizontalHeaderLabels(['a', 'b', 'c', 'd', 'e'])
  
         self.pushButtonLoad = QtGui.QPushButton(self)
-        self.pushButtonLoad.setText("Load Csv File!")
+        self.pushButtonLoad.setIcon(QtGui.QIcon(rLoadIcon))
+        self.pushButtonLoad.setToolTip("Load Csv File!")
         self.pushButtonLoad.clicked.connect(self.on_pushButtonLoad_clicked)
  
         self.pushButtonWrite = QtGui.QPushButton(self)
-        self.pushButtonWrite.setText("Write Csv File!")
+        self.pushButtonWrite.setIcon(QtGui.QIcon(rWriteIcon))        
+        self.pushButtonWrite.setToolTip("Write Csv File!")
         self.pushButtonWrite.clicked.connect(self.on_pushButtonWrite_clicked)
- 
-        self.layoutVertical = QtGui.QVBoxLayout(self)
-        self.layoutVertical.addWidget(self.tableView)
-        self.layoutVertical.addWidget(self.pushButtonLoad)
-        self.layoutVertical.addWidget(self.pushButtonWrite)
+        
+        self.pushButtonRemove = QtGui.QPushButton(self)
+        self.pushButtonRemove.setIcon(QtGui.QIcon(rMinusIcon))
+        self.pushButtonRemove.setToolTip("Remove Task Permanently")
+        #self.pushButtonRemove.setText("Remove Line")
+        self.pushButtonRemove.clicked.connect(self.on_pushButtonRemove_clicked)
+        
+        self.pushButtonAdd = QtGui.QPushButton(self)
+        self.pushButtonAdd.setIcon(QtGui.QIcon(rPlusIcon))
+        self.pushButtonAdd.setToolTip("Add Task")        
+        #self.pushButtonAdd.setText("Add Task")
+        self.pushButtonAdd.clicked.connect(self.on_pushButtonAdd_clicked)        
+        
+#         self.layoutVertical = QtGui.QVBoxLayout(self)
+#         self.layoutVertical.addWidget(self.tableView)
+#         self.layoutVertical.addWidget(self.pushButtonLoad)
+#         self.layoutVertical.addWidget(self.pushButtonWrite)
+#         self.layoutVertical.addWidget(self.pushButtonRemove)
+        self.buttonLayout = QtGui.QGridLayout(self)
+        self.buttonLayout.addWidget(self.pushButtonLoad,0,0)
+        self.buttonLayout.addWidget(self.pushButtonWrite,0,1)
+        self.buttonLayout.addWidget(self.pushButtonAdd,0,2)
+        self.buttonLayout.addWidget(self.pushButtonRemove,0,3)
+        self.buttonLayout.addWidget(self.tableView,1,0,1,4)        
+                        
 
     def loadCsv(self, fileName):
+        myorder=[2,1]
         with open(fileName, "rb") as fileInput:
-            for row in csv.reader(fileInput,delimiter=';'):    
-                items = [
-                    QtGui.QStandardItem(field)
-                    for field in row
-                ]
-                self.model.appendRow(items)
+            for row in csv.reader(fileInput,delimiter=';'):
+                if ''.join(row).strip() :
+                    items = [
+                             QtGui.QStandardItem(field)
+                             for field in row
+                             ]
+                    print items
+                    items[0], items[1] = items[1], items[0]
+                    self.model.appendRow(items)
 
     def writeCsv(self, fileName):
-        with open(fileName, "wb") as fileOutput:
-            writer = csv.writer(fileOutput)
+        with open(fileName, "wb") as fileOutput:        
+            writer = csv.writer(fileOutput,delimiter=';')
             for rowNumber in range(self.model.rowCount()):
                 fields = [
                     self.model.data(
@@ -75,7 +110,20 @@ class Example(QtGui.QWidget):
                     )
                     for columnNumber in range(self.model.columnCount())
                 ]
+                fields=[ str(x.toString()) for x in fields ]
+                print(fields)
                 writer.writerow(fields)                
+                
+    def removeLine(self):
+        #print [ x.row() for x in self.tableView.selectionModel().selection().indexes() ]
+        selection=self.tableView.selectionModel().selectedRows()
+        print selection
+        for cur in selection :
+            #print cur.row()
+            self.model.removeRow(cur.row())                
+    
+    def addLine(self):
+        self.model.appendRow([])        
     
     @QtCore.pyqtSlot()
     def on_pushButtonWrite_clicked(self):
@@ -85,6 +133,15 @@ class Example(QtGui.QWidget):
     def on_pushButtonLoad_clicked(self):
         #self.loadCsv(self.fileName)
         self.loadCsv("/home/paul/.doit")
+        
+    @QtCore.pyqtSlot()
+    def on_pushButtonRemove_clicked(self):
+        self.removeLine()
+      
+
+    @QtCore.pyqtSlot()
+    def on_pushButtonAdd_clicked(self):
+        self.addLine()        
         
         
 def main():
