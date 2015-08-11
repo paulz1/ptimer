@@ -15,11 +15,14 @@ last edited: October 2011
 import sys
 import csv
 from PyQt4 import QtGui, QtCore
+import readconf
+import os
 
 class Example(QtGui.QWidget):
     
     def __init__(self):
         super(Example, self).__init__()
+        curConf=readconf.readConf(os.path.expanduser('~')+"/.config/pztimer/config.ini")
         
         self.initUI()        
         
