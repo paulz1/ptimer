@@ -18,11 +18,23 @@ from PyQt4 import QtGui, QtCore
 import readconf
 import os
 
+class CommentedFile:
+    def __init__(self, f, commentstring="#"):
+        self.f = f
+        self.commentstring = commentstring
+    def next(self):
+        line = self.f.next()
+        while line.startswith(self.commentstring):
+            line = self.f.next()
+        return line
+    def __iter__(self):
+        return self
+
 class Example(QtGui.QWidget):
     
     def __init__(self):
         super(Example, self).__init__()
-        curConf=readconf.readConf(os.path.expanduser('~')+"/.config/pztimer/config.ini")
+        self.curConf=readconf.readConf(os.path.expanduser('~')+"/.config/pztimer/config.ini")
         
         self.initUI()        
         
@@ -74,7 +86,15 @@ class Example(QtGui.QWidget):
         self.pushButtonAdd.setIcon(QtGui.QIcon(rPlusIcon))
         self.pushButtonAdd.setToolTip("Add Task")        
         #self.pushButtonAdd.setText("Add Task")
-        self.pushButtonAdd.clicked.connect(self.on_pushButtonAdd_clicked)        
+        self.pushButtonAdd.clicked.connect(self.on_pushButtonAdd_clicked)
+        
+        self.checkShowDone = QtGui.QCheckBox("ShowDone",self)
+        if int(self.curConf.config["ShowDone"])!=0 :
+            self.checkShowDone.setCheckState(QtCore.Qt.Checked)
+        else :
+            self.checkShowDone.setCheckState(QtCore.Qt.Unchecked)
+        self.checkShowDone.stateChanged.connect(self.on_checkbox_changed)
+#         self.pushButtonAdd.clicked.connect(self.on_pushButtonAdd_clicked)        
         
 #         self.layoutVertical = QtGui.QVBoxLayout(self)
 #         self.layoutVertical.addWidget(self.tableView)
@@ -87,20 +107,28 @@ class Example(QtGui.QWidget):
         self.buttonLayout.addWidget(self.pushButtonAdd,0,2)
         self.buttonLayout.addWidget(self.pushButtonRemove,0,3)
         self.buttonLayout.addWidget(self.tableView,1,0,1,4)        
+        self.buttonLayout.addWidget(self.checkShowDone,2,0)        
                         
 
+    def clearModel(self):
+        self.model.clear()
+
     def loadCsv(self, fileName):
-        myorder=[2,1]
+        self.clearModel()        
         with open(fileName, "rb") as fileInput:
             for row in csv.reader(fileInput,delimiter=';'):
                 if ''.join(row).strip() :
+                    
                     items = [
                              QtGui.QStandardItem(field)
                              for field in row
-                             ]
-                    print items
+                             ]                    
                     items[0], items[1] = items[1], items[0]
-                    self.model.appendRow(items)
+                    if str(items[1].text()).isdigit() :
+                        if ( (int(items[1].text())!=0) or (int(self.curConf.config["ShowDone"])!=0) ) :
+                            self.model.appendRow(items)
+                    else :
+                        self.model.appendRow(items)
 
     def writeCsv(self, fileName):
         with open(fileName, "wb") as fileOutput:        
@@ -127,7 +155,17 @@ class Example(QtGui.QWidget):
     
     def addLine(self):
         self.model.appendRow([])        
-    
+
+    def changeConf(self):
+        if  self.checkShowDone.checkState() == QtCore.Qt.Checked :
+            self.curConf.config["ShowDone"]=1
+        else :
+            self.curConf.config["ShowDone"]=0
+        self.curConf.writeShowDoneConf(self.curConf.config["ShowDone"])
+        self.loadCsv("/home/paul/.doit")        
+
+
+#=========EVENTS    
     @QtCore.pyqtSlot()
     def on_pushButtonWrite_clicked(self):
         self.writeCsv("/home/paul/.doit")
@@ -144,7 +182,11 @@ class Example(QtGui.QWidget):
 
     @QtCore.pyqtSlot()
     def on_pushButtonAdd_clicked(self):
-        self.addLine()        
+        self.addLine()
+
+    @QtCore.pyqtSlot()
+    def on_checkbox_changed(self):
+        self.changeConf()        
         
         
 def main():
