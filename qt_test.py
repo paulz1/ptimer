@@ -30,6 +30,18 @@ class CommentedFile:
     def __iter__(self):
         return self
 
+class UnCommentedFile:
+    def __init__(self, f, commentstring="#"):
+        self.f = f
+        self.commentstring = commentstring
+    def next(self):
+        line = self.f.next()
+        while line.startswith(self.commentstring):
+            line = line[1:]
+        return line
+    def __iter__(self):
+        return self    
+
 class Example(QtGui.QWidget):
     
     def __init__(self):
@@ -114,21 +126,19 @@ class Example(QtGui.QWidget):
         self.model.clear()
 
     def loadCsv(self, fileName):
-        self.clearModel()        
-        with open(fileName, "rb") as fileInput:
-            for row in csv.reader(fileInput,delimiter=';'):
-                if ''.join(row).strip() :
-                    
-                    items = [
-                             QtGui.QStandardItem(field)
-                             for field in row
-                             ]                    
-                    items[0], items[1] = items[1], items[0]
-                    if str(items[1].text()).isdigit() :
-                        if ( (int(items[1].text())!=0) or (int(self.curConf.config["ShowDone"])!=0) ) :
-                            self.model.appendRow(items)
-                    else :
-                        self.model.appendRow(items)
+        self.clearModel()
+        if int(self.curConf.config["ShowDone"])!=0 :
+            fileInput=UnCommentedFile(open(fileName, "rb"))
+        else :
+            fileInput=CommentedFile(open(fileName, "rb"))
+        for row in csv.reader(fileInput,delimiter=';'):
+            if ''.join(row).strip() :                                    
+                items = [
+                         QtGui.QStandardItem(field)
+                         for field in row
+                         ]                    
+                items[0], items[1] = items[1], items[0]
+                self.model.appendRow(items)
 
     def writeCsv(self, fileName):
         with open(fileName, "wb") as fileOutput:        
