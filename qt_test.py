@@ -36,8 +36,9 @@ class UnCommentedFile:
         self.commentstring = commentstring
     def next(self):
         line = self.f.next()
-        while line.startswith(self.commentstring):
-            line = line[1:]
+#         while line.startswith(self.commentstring):
+#             pass
+#             line = line[1:]
         return line
     def __iter__(self):
         return self    
@@ -47,36 +48,32 @@ class Example(QtGui.QWidget):
     def __init__(self):
         super(Example, self).__init__()
         self.curConf=readconf.readConf(os.path.expanduser('~')+"/.config/pztimer/config.ini")
+        self.colnames = ["task","status","created","tags"]
         
         self.initUI()        
         
-    def initUI(self):
+    def initUI(self):        
         
-        colnames = ["task","status","created","tags"]
         rMinusIcon = QtGui.QPixmap("Resources/button_minus_red.png")
         rPlusIcon = QtGui.QPixmap("Resources/button_plus_green.png")
         rLoadIcon = QtGui.QPixmap("Resources/load.png")
-        rWriteIcon = QtGui.QPixmap("Resources/write.png")        
+        rWriteIcon = QtGui.QPixmap("Resources/write.png")
+        rDoneIcon = QtGui.QPixmap("Resources/done.png")               
+        rUnDoneIcon = QtGui.QPixmap("Resources/undone.png")        
         
-        self.setGeometry(300, 300, 500, 210)
-        self.setWindowTitle('Icon3')
-        self.setWindowIcon(QtGui.QIcon('web.png'))        
-    
+        self.setGeometry(300, 300, 600, 310)
+        self.setWindowTitle('pzTimer')
+        self.setWindowIcon(QtGui.QIcon('web.png'))
+        
         self.model = QtGui.QStandardItemModel(self)
         
-        for i in range(len(colnames)) :
-            self.model.setHeaderData(i, QtCore.Qt.Horizontal, colnames[i])
-        #self.model.setHeaderData(1, QtCore.Qt.Horizontal, colnames[1])
-        self.model.setHorizontalHeaderLabels(colnames)
+        for i in range(len(self.colnames)) :
+            self.model.setHeaderData(i, QtCore.Qt.Horizontal, self.colnames[i])
+        #self.model.setHeaderData(1, QtCore.Qt.Horizontal, self.colnames[1])
+        self.model.setHorizontalHeaderLabels(self.colnames)
  
         self.tableView = QtGui.QTableView(self)
-        #self.tableView = QtGui.QTableWidget(self)
-        self.tableView.setModel(self.model)
-        self.tableView.setColumnWidth(0,250)
-        self.tableView.setColumnWidth(1,50)
-        self.tableView.setColumnWidth(2,100)
-        self.tableView.horizontalHeader().setStretchLastSection(True)
-        #self.tableView.setHorizontalHeaderLabels(['a', 'b', 'c', 'd', 'e'])
+        self.setTableView()
  
         self.pushButtonLoad = QtGui.QPushButton(self)
         self.pushButtonLoad.setIcon(QtGui.QIcon(rLoadIcon))
@@ -100,6 +97,16 @@ class Example(QtGui.QWidget):
         #self.pushButtonAdd.setText("Add Task")
         self.pushButtonAdd.clicked.connect(self.on_pushButtonAdd_clicked)
         
+        self.pushButtonDone = QtGui.QPushButton(self)
+        self.pushButtonDone.setIcon(QtGui.QIcon(rDoneIcon))
+        self.pushButtonDone.setToolTip("Comment/Mark task as Done")        
+        self.pushButtonDone.clicked.connect(self.on_pushButtonDone_clicked)
+        
+        self.pushButtonUnDone = QtGui.QPushButton(self)
+        self.pushButtonUnDone.setIcon(QtGui.QIcon(rUnDoneIcon))
+        self.pushButtonUnDone.setToolTip("UnComment task")        
+        self.pushButtonUnDone.clicked.connect(self.on_pushButtonUnDone_clicked)                
+        
         self.checkShowDone = QtGui.QCheckBox("ShowDone",self)
         if int(self.curConf.config["ShowDone"])!=0 :
             self.checkShowDone.setCheckState(QtCore.Qt.Checked)
@@ -117,13 +124,27 @@ class Example(QtGui.QWidget):
         self.buttonLayout.addWidget(self.pushButtonLoad,0,0)
         self.buttonLayout.addWidget(self.pushButtonWrite,0,1)
         self.buttonLayout.addWidget(self.pushButtonAdd,0,2)
-        self.buttonLayout.addWidget(self.pushButtonRemove,0,3)
-        self.buttonLayout.addWidget(self.tableView,1,0,1,4)        
+        self.buttonLayout.addWidget(self.pushButtonDone,0,3)
+        self.buttonLayout.addWidget(self.pushButtonUnDone,0,4)        
+        self.buttonLayout.addWidget(self.pushButtonRemove,0,5)
+        self.buttonLayout.addWidget(self.tableView,1,0,1,6)        
         self.buttonLayout.addWidget(self.checkShowDone,2,0)        
                         
 
+
+
     def clearModel(self):
         self.model.clear()
+        
+    def setTableView(self):
+        #self.tableView = QtGui.QTableWidget(self)
+        self.tableView.setModel(self.model)
+        self.tableView.setColumnWidth(0,350)
+        self.tableView.setColumnWidth(1,50)
+        self.tableView.setColumnWidth(2,50)
+        self.tableView.setColumnWidth(2,100)        
+        self.tableView.horizontalHeader().setStretchLastSection(True)
+        #self.tableView.setHorizontalHeaderLabels(['a', 'b', 'c', 'd', 'e'])        
 
     def loadCsv(self, fileName):
         self.clearModel()
@@ -137,8 +158,10 @@ class Example(QtGui.QWidget):
                          QtGui.QStandardItem(field)
                          for field in row
                          ]                    
-                items[0], items[1] = items[1], items[0]
+#                 items[0], items[1] = items[1], items[0]
                 self.model.appendRow(items)
+        self.model.setHorizontalHeaderLabels(self.colnames)
+        self.setTableView()
 
     def writeCsv(self, fileName):
         with open(fileName, "wb") as fileOutput:        
@@ -151,6 +174,7 @@ class Example(QtGui.QWidget):
                     )
                     for columnNumber in range(self.model.columnCount())
                 ]
+#                 fields[0], fields[1] = fields[1], fields[0]
                 fields=[ str(x.toString()) for x in fields ]
                 print(fields)
                 writer.writerow(fields)                
@@ -162,9 +186,30 @@ class Example(QtGui.QWidget):
         for cur in selection :
             #print cur.row()
             self.model.removeRow(cur.row())                
+            
+    def markDone(self):
+        selection=self.tableView.selectionModel().selectedRows()
+        for cur in selection :            
+            # print cur.row()
+#             print self.model.item(cur.row(),0).data(QtCore.Qt.DisplayRole).toString()
+            if not str(self.model.item(cur.row(),0).data(QtCore.Qt.DisplayRole).toString()).startswith("#") :
+                self.model.item(cur.row(),0).setData("#"+self.model.item(cur.row(),0).data(QtCore.Qt.DisplayRole).toString(),QtCore.Qt.EditRole)
+            self.writeCsv("/home/paul/.doit")    
+            self.loadCsv("/home/paul/.doit")
+            
+    def markUnDone(self):
+        selection=self.tableView.selectionModel().selectedRows()
+        for cur in selection :            
+            if str(self.model.item(cur.row(),0).data(QtCore.Qt.DisplayRole).toString()).startswith("#") :
+                self.model.item(cur.row(),0).setData(self.model.item(cur.row(),0).data(QtCore.Qt.DisplayRole).toString()[1:],QtCore.Qt.EditRole)
+            self.writeCsv("/home/paul/.doit")    
+            self.loadCsv("/home/paul/.doit")        
     
     def addLine(self):
-        self.model.appendRow([])        
+        import datetime
+        cur_date=datetime.datetime.now()
+        self.model.appendRow([QtGui.QStandardItem(""),QtGui.QStandardItem(0),QtGui.QStandardItem(cur_date.strftime('%Y-%m-%d')),QtGui.QStandardItem("")])
+#         self.model.appendRow([])        
 
     def changeConf(self):
         if  self.checkShowDone.checkState() == QtCore.Qt.Checked :
@@ -193,6 +238,14 @@ class Example(QtGui.QWidget):
     @QtCore.pyqtSlot()
     def on_pushButtonAdd_clicked(self):
         self.addLine()
+
+    @QtCore.pyqtSlot()
+    def on_pushButtonDone_clicked(self):
+        self.markDone()
+
+    @QtCore.pyqtSlot()
+    def on_pushButtonUnDone_clicked(self):
+        self.markUnDone()        
 
     @QtCore.pyqtSlot()
     def on_checkbox_changed(self):
