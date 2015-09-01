@@ -18,30 +18,21 @@ from PyQt4 import QtGui, QtCore
 import readconf
 import os
 
-class CommentedFile:
-    def __init__(self, f, commentstring="#"):
-        self.f = f
-        self.commentstring = commentstring
-    def next(self):
-        line = self.f.next()
-        while line.startswith(self.commentstring):
-            line = self.f.next()
-        return line
-    def __iter__(self):
-        return self
+class Model(QtGui.QStandardItemModel):
 
-class UnCommentedFile:
-    def __init__(self, f, commentstring="#"):
-        self.f = f
-        self.commentstring = commentstring
-    def next(self):
-        line = self.f.next()
-#         while line.startswith(self.commentstring):
-#             pass
-#             line = line[1:]
-        return line
-    def __iter__(self):
-        return self    
+    def __init__(self, parent = None):
+
+        QtGui.QStandardItemModel.__init__(self, parent)
+
+    def data(self, index, role):        
+#         print index.data().toString()
+        model=index.model()
+#        print QtGui.QStandardItemModel.data(self,model.index(index.row(), 0),QtCore.Qt.DisplayRole).toString()
+#        if index.row() == 3 and role == QtCore.Qt.BackgroundRole:
+        if str(QtGui.QStandardItemModel.data(self,model.index(index.row(), 0),QtCore.Qt.DisplayRole).toString()).startswith("#") and role == QtCore.Qt.BackgroundRole:            
+            return QtCore.QVariant(QtGui.QBrush(QtCore.Qt.gray))                
+        else:
+            return QtGui.QStandardItemModel.data(self, index, role)
 
 class Example(QtGui.QWidget):
     
@@ -50,7 +41,16 @@ class Example(QtGui.QWidget):
         self.curConf=readconf.readConf(os.path.expanduser('~')+"/.config/pztimer/config.ini")
         self.colnames = ["task","status","created","tags"]
         
-        self.initUI()        
+        self.initUI()
+        
+    def closeEvent(self, event):
+        if QtGui.QMessageBox.question(None, '', "Are you sure you want to quit?",
+                            QtGui.QMessageBox.Yes | QtGui.QMessageBox.No,
+                            QtGui.QMessageBox.No) == QtGui.QMessageBox.Yes :
+            event.accept() # let the window close
+        else:
+            event.ignore()
+            
         
     def initUI(self):        
         
@@ -65,7 +65,8 @@ class Example(QtGui.QWidget):
         self.setWindowTitle('pzTimer')
         self.setWindowIcon(QtGui.QIcon('web.png'))
         
-        self.model = QtGui.QStandardItemModel(self)
+        #self.model = QtGui.QStandardItemModel(self)
+        self.model = Model()        
         
         for i in range(len(self.colnames)) :
             self.model.setHeaderData(i, QtCore.Qt.Horizontal, self.colnames[i])
@@ -138,7 +139,7 @@ class Example(QtGui.QWidget):
         
     def setTableView(self):
         #self.tableView = QtGui.QTableWidget(self)
-        self.tableView.setModel(self.model)
+        self.tableView.setModel(self.model)        
         self.tableView.setColumnWidth(0,350)
         self.tableView.setColumnWidth(1,50)
         self.tableView.setColumnWidth(2,50)
@@ -148,10 +149,7 @@ class Example(QtGui.QWidget):
 
     def loadCsv(self, fileName):
         self.clearModel()
-        if int(self.curConf.config["ShowDone"])!=0 :
-            fileInput=UnCommentedFile(open(fileName, "rb"))
-        else :
-            fileInput=CommentedFile(open(fileName, "rb"))
+        fileInput=open(fileName, "rb")
         for row in csv.reader(fileInput,delimiter=';'):
             if ''.join(row).strip() :                                    
                 items = [
@@ -159,11 +157,17 @@ class Example(QtGui.QWidget):
                          for field in row
                          ]                    
 #                 items[0], items[1] = items[1], items[0]
+            if (int(self.curConf.config["ShowDone"])==0) and (str((items[0]).text()).startswith("#")) :
                 self.model.appendRow(items)
+                self.tableView.setRowHidden(self.model.rowCount()-1,True)
+            else :
+                self.model.appendRow(items)                
         self.model.setHorizontalHeaderLabels(self.colnames)
         self.setTableView()
 
     def writeCsv(self, fileName):
+        os.rename(os.path.realpath(fileName), os.path.realpath(fileName)+"~")
+
         with open(fileName, "wb") as fileOutput:        
             writer = csv.writer(fileOutput,delimiter=';')
             for rowNumber in range(self.model.rowCount()):
@@ -177,7 +181,8 @@ class Example(QtGui.QWidget):
 #                 fields[0], fields[1] = fields[1], fields[0]
                 fields=[ str(x.toString()) for x in fields ]
                 print(fields)
-                writer.writerow(fields)                
+                writer.writerow(fields)
+        fileOutput.close()                
                 
     def removeLine(self):
         #print [ x.row() for x in self.tableView.selectionModel().selection().indexes() ]
@@ -208,7 +213,7 @@ class Example(QtGui.QWidget):
     def addLine(self):
         import datetime
         cur_date=datetime.datetime.now()
-        self.model.appendRow([QtGui.QStandardItem(""),QtGui.QStandardItem(0),QtGui.QStandardItem(cur_date.strftime('%Y-%m-%d')),QtGui.QStandardItem("")])
+        self.model.appendRow([QtGui.QStandardItem(""),QtGui.QStandardItem("0"),QtGui.QStandardItem(cur_date.strftime('%Y-%m-%d')),QtGui.QStandardItem("")])
 #         self.model.appendRow([])        
 
     def changeConf(self):
@@ -250,7 +255,11 @@ class Example(QtGui.QWidget):
     @QtCore.pyqtSlot()
     def on_checkbox_changed(self):
         self.changeConf()        
-        
+
+def sigint_handler(*args):
+    """Handler for the SIGINT signal."""
+    sys.stderr.write('\r')
+
         
 def main():
     
