@@ -22,7 +22,7 @@ from PyQt4 import QtCore, QtGui
 from Resources.LcdNumber_ui import Ui_Form
 from Resources.AlarmSetupDialog_ui import Ui_DialogAlarmSetup
 #from SettingsDialog import SettingsDialog
-
+import qt_test
 
 # global variables for logging and debugging
 
@@ -40,6 +40,8 @@ class Timer(QtGui.QMainWindow):
         QtGui.QMainWindow.__init__(self, None, QtCore.Qt.WindowStaysOnTopHint|QtCore.Qt.FramelessWindowHint)
         self.ui = Ui_Form()
         self.ui.setupUi(self)
+        self.ex = qt_test.Example()
+        
 
         # Initialization 
 
@@ -71,6 +73,7 @@ class Timer(QtGui.QMainWindow):
 
         # Display
         self.trayIcon.show()
+        self.ex.show()
 
     def createMenu(self):
         """
@@ -252,6 +255,7 @@ if __name__ == "__main__":
         sys.exit(1)
     QtGui.QApplication.setQuitOnLastWindowClosed(False)
     timerList = Str2Num(sys.argv[1:])
-    myapp = Timer(timerList)
+    #myapp = Timer(timerList)
+    myapp = Timer([5,25])    
     sys.exit(app.exec_())
 

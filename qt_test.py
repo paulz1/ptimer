@@ -70,16 +70,16 @@ class Example(QtGui.QWidget):
         
         for i in range(len(self.colnames)) :
             self.model.setHeaderData(i, QtCore.Qt.Horizontal, self.colnames[i])
-        #self.model.setHeaderData(1, QtCore.Qt.Horizontal, self.colnames[1])
         self.model.setHorizontalHeaderLabels(self.colnames)
  
         self.tableView = QtGui.QTableView(self)
         self.setTableView()
+        self.loadCsv("/home/paul/.doit")
  
-        self.pushButtonLoad = QtGui.QPushButton(self)
-        self.pushButtonLoad.setIcon(QtGui.QIcon(rLoadIcon))
-        self.pushButtonLoad.setToolTip("Load Csv File!")
-        self.pushButtonLoad.clicked.connect(self.on_pushButtonLoad_clicked)
+#         self.pushButtonLoad = QtGui.QPushButton(self)
+#         self.pushButtonLoad.setIcon(QtGui.QIcon(rLoadIcon))
+#         self.pushButtonLoad.setToolTip("Load Csv File!")
+#         self.pushButtonLoad.clicked.connect(self.on_pushButtonLoad_clicked)
  
         self.pushButtonWrite = QtGui.QPushButton(self)
         self.pushButtonWrite.setIcon(QtGui.QIcon(rWriteIcon))        
@@ -89,7 +89,6 @@ class Example(QtGui.QWidget):
         self.pushButtonRemove = QtGui.QPushButton(self)
         self.pushButtonRemove.setIcon(QtGui.QIcon(rMinusIcon))
         self.pushButtonRemove.setToolTip("Remove Task Permanently")
-        #self.pushButtonRemove.setText("Remove Line")
         self.pushButtonRemove.clicked.connect(self.on_pushButtonRemove_clicked)
         
         self.pushButtonAdd = QtGui.QPushButton(self)
@@ -114,25 +113,27 @@ class Example(QtGui.QWidget):
         else :
             self.checkShowDone.setCheckState(QtCore.Qt.Unchecked)
         self.checkShowDone.stateChanged.connect(self.on_checkbox_changed)
-#         self.pushButtonAdd.clicked.connect(self.on_pushButtonAdd_clicked)        
+#         self.pushButtonAdd.clicked.connect(self.on_pushButtonAdd_clicked)   
+
+        self.timer = QtCore.QTimer(self)
+        self.timer.timeout.connect(self.updateTimerDisplay)
+        self.isPaused = False
+        self.alarm_times = []
+        self.settingsDialog = None
         
-#         self.layoutVertical = QtGui.QVBoxLayout(self)
-#         self.layoutVertical.addWidget(self.tableView)
-#         self.layoutVertical.addWidget(self.pushButtonLoad)
-#         self.layoutVertical.addWidget(self.pushButtonWrite)
-#         self.layoutVertical.addWidget(self.pushButtonRemove)
+        self.custom_layout = QtGui.QHBoxLayout(self)
+        self.custom_layout.addItem(self.timer)
+
         self.buttonLayout = QtGui.QGridLayout(self)
-        self.buttonLayout.addWidget(self.pushButtonLoad,0,0)
-        self.buttonLayout.addWidget(self.pushButtonWrite,0,1)
-        self.buttonLayout.addWidget(self.pushButtonAdd,0,2)
-        self.buttonLayout.addWidget(self.pushButtonDone,0,3)
-        self.buttonLayout.addWidget(self.pushButtonUnDone,0,4)        
-        self.buttonLayout.addWidget(self.pushButtonRemove,0,5)
+#         self.buttonLayout.addWidget(self.pushButtonLoad,0,0)
+        self.buttonLayout.addWidget(self.pushButtonAdd,0,1)
+        self.buttonLayout.addWidget(self.pushButtonDone,0,2)
+        self.buttonLayout.addWidget(self.pushButtonUnDone,0,3)        
+        self.buttonLayout.addWidget(self.pushButtonRemove,0,4)
+        self.buttonLayout.addWidget(self.pushButtonWrite,0,5)
+        self.buttonLayout.addLayout(self.custom_layout,0,6)             
         self.buttonLayout.addWidget(self.tableView,1,0,1,6)        
-        self.buttonLayout.addWidget(self.checkShowDone,2,0)        
-                        
-
-
+        self.buttonLayout.addWidget(self.checkShowDone,2,0)
 
     def clearModel(self):
         self.model.clear()
@@ -223,6 +224,16 @@ class Example(QtGui.QWidget):
             self.curConf.config["ShowDone"]=0
         self.curConf.writeShowDoneConf(self.curConf.config["ShowDone"])
         self.loadCsv("/home/paul/.doit")        
+
+#=====================TIMER
+    def updateTimerDisplay(self):
+        text = "%d:%02d" % (self.curTime/60,self.curTime % 60)
+        self.ui.lcdNumber.display(text)
+        if self.curTime == 0:
+            self.timer.stop()
+            self.blinkTimer.start(250)
+        else:
+            self.curTime -= 1
 
 
 #=========EVENTS    
