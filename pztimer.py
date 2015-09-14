@@ -22,7 +22,9 @@ from PyQt4 import QtCore, QtGui
 from Resources.LcdNumber_ui import Ui_Form
 from Resources.AlarmSetupDialog_ui import Ui_DialogAlarmSetup
 #from SettingsDialog import SettingsDialog
-import qt_test
+
+#import qt_test
+#import example
 
 # global variables for logging and debugging
 
@@ -32,16 +34,15 @@ log = sys.stdout
 
 class Timer(QtGui.QMainWindow):
     """
-    The Timer class uses the QtTimer to keep count and uses a frameless window to display the count-down timer.
+    The Timer class uses the QtTimer to keep count and to display the count-down timer.
     A systray is also implemented with the option to toggle the timer, pause/play, reset, settings and quit.
     """
     def __init__(self, timer_values, parent=None):
         #QtGui.QWidget.__init__(self, parent)
-        QtGui.QMainWindow.__init__(self, None, QtCore.Qt.WindowStaysOnTopHint|QtCore.Qt.FramelessWindowHint)
+        #QtGui.QMainWindow.__init__(self, None, QtCore.Qt.WindowStaysOnTopHint|QtCore.Qt.FramelessWindowHint)
+        QtGui.QMainWindow.__init__(self, None, QtCore.Qt.WindowStaysOnTopHint)        
         self.ui = Ui_Form()
         self.ui.setupUi(self)
-        self.ex = qt_test.Example()
-        
 
         # Initialization 
 
@@ -53,27 +54,14 @@ class Timer(QtGui.QMainWindow):
 
         if (len(timer_values) > 0):
             self.setTimer(timer_values)
-            self.startTimer()
+#            self.startTimer()
         else:
             self.settings()
 
-        self.contextMenu = QtGui.QMenu(self)
-        self.trayIcon = QtGui.QSystemTrayIcon(self)
         self.blinkTimer = QtCore.QTimer(self)
         self.blinkTimer.timeout.connect(self.toggleTimerColor)
         self.color_names = [ "Normal", "Black" ]
         self.color_idx = 1
-
-        # Setup
-        self.createMenu()
-        self.trayIcon.setContextMenu(self.contextMenu)
-        self.trayIcon.setIcon(QtGui.QIcon(':Icons/bell.png'))
-        self.trayIcon.activated.connect(self.iconActivated)
-         
-
-        # Display
-        self.trayIcon.show()
-        self.ex.show()
 
     def createMenu(self):
         """
@@ -256,6 +244,6 @@ if __name__ == "__main__":
     QtGui.QApplication.setQuitOnLastWindowClosed(False)
     timerList = Str2Num(sys.argv[1:])
     #myapp = Timer(timerList)
-    myapp = Timer([5,25])    
+    myapp = Timer([25,5])    
     sys.exit(app.exec_())
 

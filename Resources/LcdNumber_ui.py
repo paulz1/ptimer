@@ -12,12 +12,14 @@ from PyQt4 import QtCore, QtGui
 class Ui_Form(object):
     def setupUi(self, Form):
         Form.setObjectName("Form")
-        Form.resize(74, 35)
+#        Form.resize(74, 35)
+        Form.resize(14, 35)
         self.lcdNumber = QtGui.QLCDNumber(Form)
         self.lcdNumber.setGeometry(QtCore.QRect(1, 1, 71, 31))
         self.lcdNumber.setObjectName("lcdNumber")
-
+         
         self.retranslateUi(Form)
+        
         QtCore.QMetaObject.connectSlotsByName(Form)
 
     def retranslateUi(self, Form):
