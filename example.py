@@ -19,6 +19,8 @@ import readconf
 import os
 from pztimer import Timer
 
+MIN_POMODORO_BEFORE_REST = 1
+
 class Model(QtGui.QStandardItemModel):
 
     def __init__(self, parent = None):
@@ -42,6 +44,9 @@ class Example(QtGui.QWidget):
         super(Example, self).__init__()
         self.curConf=readconf.readConf(os.path.expanduser('~')+"/.config/pztimer/config.ini")
         self.colnames = ["task","status","created","tags"]
+        self.current_job=None
+        self.jobs_done = 0
+        self.isLongRest = False
         
         self.initUI()
         
@@ -55,8 +60,10 @@ class Example(QtGui.QWidget):
 #             event.accept() # let the window close
 #         else:
 #             event.ignore()
-        self.hide()
-        event.ignore()
+
+#         self.hide()
+#         event.ignore()
+        
 #         if self.trayMsgDisplayed == False:
 #             
 #             QtGui.QMessageBox.information(self, "Systray",
@@ -77,9 +84,13 @@ class Example(QtGui.QWidget):
         rLoadIcon = QtGui.QPixmap("Resources/load.png")
         rWriteIcon = QtGui.QPixmap("Resources/write.png")
         rDoneIcon = QtGui.QPixmap("Resources/done.png")               
-        rUnDoneIcon = QtGui.QPixmap("Resources/undone.png")        
+        rUnDoneIcon = QtGui.QPixmap("Resources/undone.png")
+        rStartAlarm = QtGui.QPixmap("Resources/start_alarm.png")
+        rStopAlarm = QtGui.QPixmap("Resources/stop_alarm.png")
+        # Icon made by Freepik from www.flaticon.com
+        rRest = QtGui.QPixmap("Resources/rest.png")
         
-        self.setGeometry(300, 300, 600, 310)
+        self.setGeometry(300, 300, 600, 330)
         self.setWindowTitle('pzTimer')
         self.setWindowIcon(QtGui.QIcon('web.png'))
         
@@ -126,9 +137,19 @@ class Example(QtGui.QWidget):
         self.pushButtonUnDone.clicked.connect(self.on_pushButtonUnDone_clicked)
 
         self.pushStartTimer = QtGui.QPushButton(self)
-        self.pushStartTimer.setIcon(QtGui.QIcon(':Icons/bell.png'))
+        self.pushStartTimer.setIcon(QtGui.QIcon(rStartAlarm))
         self.pushStartTimer.setToolTip("Start Timer for a job")        
-        #self.pushStartTimer.clicked.connect(self.on_pushButtonUnDone_clicked)
+        self.pushStartTimer.clicked.connect(self.on_pushStart_clicked)
+
+        self.pushStopTimer = QtGui.QPushButton(self)
+        self.pushStopTimer.setIcon(QtGui.QIcon(rStopAlarm))
+        self.pushStopTimer.setToolTip("Stop Timer") 
+        self.pushStopTimer.clicked.connect(self.on_pushStop_clicked)        
+        
+        self.pushRestTimer = QtGui.QPushButton(self)
+        self.pushRestTimer.setIcon(QtGui.QIcon(rRest))
+        self.pushRestTimer.setToolTip("Your does not work enough for have a long rest") 
+        self.pushRestTimer.clicked.connect(self.on_pushRest_clicked)        
         
         self.checkShowDone = QtGui.QCheckBox("ShowDone",self)
         if int(self.curConf.config["ShowDone"])!=0 :
@@ -138,8 +159,12 @@ class Example(QtGui.QWidget):
         self.checkShowDone.stateChanged.connect(self.on_checkbox_changed)
 #         self.pushButtonAdd.clicked.connect(self.on_pushButtonAdd_clicked)   
 
-        self.timer = Timer([25,5])
+        self.myTimer = Timer([1,2])
         
+        self.statusBar = QtGui.QStatusBar(self)
+        self.statusBar.setSizeGripEnabled(False)
+        
+        # GridLayout Elements Begin
         self.buttonLayout = QtGui.QGridLayout(self)
 #         self.buttonLayout.addWidget(self.pushButtonLoad,0,0)
         self.buttonLayout.addWidget(self.pushButtonAdd,0,0)
@@ -147,10 +172,19 @@ class Example(QtGui.QWidget):
         self.buttonLayout.addWidget(self.pushButtonUnDone,0,2)        
         self.buttonLayout.addWidget(self.pushButtonRemove,0,3)
         self.buttonLayout.addWidget(self.pushButtonWrite,0,4)
-        self.buttonLayout.addWidget(self.pushStartTimer,0,5)                  
-        self.buttonLayout.addWidget(self.tableView,1,0,1,6)        
+        self.buttonLayout.addWidget(self.pushStartTimer,0,5)
+        self.buttonLayout.addWidget(self.pushStopTimer,0,6)
+        self.buttonLayout.addWidget(self.pushRestTimer,0,7)
+                                  
+        self.buttonLayout.addWidget(self.tableView,1,0,1,8)
+                
         self.buttonLayout.addWidget(self.checkShowDone,2,0)
-        self.buttonLayout.addWidget(self.timer,2,5)
+        self.buttonLayout.addWidget(self.myTimer,2,5,1,2)
+        
+        self.buttonLayout.addWidget(self.statusBar,3,0,1,8)
+#         self.pushRestTimer.setStyleSheet("QWidget { background-color: #aeadac }")
+        self.pushRestTimer.setEnabled(False)
+        # GridLayout Elements End        
 
         #Tray and Menu        
         self.contextMenu = QtGui.QMenu(self)
@@ -163,9 +197,15 @@ class Example(QtGui.QWidget):
         #self.trayIcon.setIcon(QtGui.QIcon(':Icons/bell.png'))
         self.trayIcon.activated.connect(self.iconActivated)
         
+        #InternalTimer
+        self.intTimer = QtCore.QTimer(self)
+        self.intTimer.timeout.connect(self.checkTimer)
+        self.intTimer.start(500)
+        
         # Display
         self.trayIcon.show()             
         
+          
 
     def createMenu(self):
         """
@@ -176,11 +216,11 @@ class Example(QtGui.QWidget):
 #         self.toggleTimerAction = QtGui.QAction("&Toggle Timer", self,
 #                 triggered=self.timer.toggleTimer)
         self.pauseTimerAction = QtGui.QAction("&Pause/Play Timer", self,
-                triggered=self.timer.pauseTimer)
+                triggered=self.myTimer.pauseTimer)
         self.resetTimerAction = QtGui.QAction("&Reset Timer", self,
-                triggered=self.timer.resetTimer)
+                triggered=self.myTimer.resetTimer)
         self.settingsAction = QtGui.QAction("&Settings", self,
-                triggered=self.timer.settings)
+                triggered=self.myTimer.settings)
         self.quitAction = QtGui.QAction("&Quit", self,
                 triggered=QtGui.qApp.quit)
         
@@ -198,7 +238,11 @@ class Example(QtGui.QWidget):
         pass
         """
         if reason in (QtGui.QSystemTrayIcon.Trigger, QtGui.QSystemTrayIcon.DoubleClick):
-            self.timer.toggleTimer()
+            if self.isVisible() :
+                self.hide()
+            else :
+                self.unhideWindow()
+            #self.myTimer.toggleTimer()
 
     def clearModel(self):
         self.model.clear()
@@ -288,18 +332,64 @@ class Example(QtGui.QWidget):
         else :
             self.curConf.config["ShowDone"]=0
         self.curConf.writeShowDoneConf(self.curConf.config["ShowDone"])
-        self.loadCsv("/home/paul/.doit")        
+        self.loadCsv("/home/paul/.doit")
+        
+    def startJob(self):
+        if (not self.myTimer.isActive ) :
+            if self.isLongRest :
+                self.current_job = -1
+                self.myTimer.startJobTimer()
+                message = "Starting Long Rest :-) "
+            elif self.myTimer.working_type!=1 :            
+                message = "No job was selected, nothing to start"
+                selection=self.tableView.selectionModel().selectedRows()
+                for cur in selection :
+                    self.current_job = cur.row()
+                    self.myTimer.startJobTimer()
+                    message = "Starting job : " + str(cur.row())
+            else :
+                message = "You are resting now, could not start new job"                
+        else :
+            message = "Some job is already active, could not start a new job"
+        self.statusBar.showMessage(message)
 
-#=====================TIMER
-    def updateTimerDisplay(self):
-        text = "%d:%02d" % (self.curTime/60,self.curTime % 60)
-        self.ui.lcdNumber.display(text)
-        if self.curTime == 0:
-            self.timer.stop()
-            self.blinkTimer.start(250)
-        else:
-            self.curTime -= 1
+    def stopJob(self):
+        #print self.myTimer.curTime
+        if self.current_job is not None :
+            self.current_job = None
+            self.isLongRest = False
+            self.myTimer.stopTimer()
+            
+    def enableRestButton(self):
+        self.pushRestTimer.setEnabled(True)
+        self.pushRestTimer.setToolTip("Have a long rest")
 
+    def disableRestButton(self):
+        self.pushRestTimer.setEnabled(False)
+        self.pushRestTimer.setToolTip("Your does not work enough for have a long rest")
+            
+    def checkTimer(self):
+        # Check if job is finished
+        if (self.myTimer.isDone) and ( self.current_job is not None ) :
+#             print self.model.item(self.current_job,1).data(QtCore.Qt.DisplayRole).toString().toInt()[0]
+            if not self.isLongRest :
+                self.model.item(self.current_job,1).setData(self.model.item(self.current_job,1).data(QtCore.Qt.DisplayRole).toString().toInt()[0]+1,QtCore.Qt.EditRole)
+                self.writeCsv("/home/paul/.doit")    
+                self.loadCsv("/home/paul/.doit")
+                self.current_job = None
+                self.myTimer.isDone = False
+                self.jobs_done+=1
+            else :
+                self.current_job = None
+                self.myTimer.isDone = False
+                self.isLongRest = False
+                self.jobs_done=0                
+            # Check if job is finished            
+        if self.jobs_done >= MIN_POMODORO_BEFORE_REST :
+            self.enableRestButton()
+        else :
+            self.disableRestButton()
+#             self.statusBar.showMessage("You does not work enough for have a long rest.")                            
 
 #=========EVENTS    
     @QtCore.pyqtSlot()
@@ -330,8 +420,20 @@ class Example(QtGui.QWidget):
 
     @QtCore.pyqtSlot()
     def on_checkbox_changed(self):
-        self.changeConf()        
+        self.changeConf()
+    
+    @QtCore.pyqtSlot()        
+    def on_pushStart_clicked(self):
+        self.startJob()
 
+    @QtCore.pyqtSlot()        
+    def on_pushStop_clicked(self):
+        self.stopJob()
+
+    @QtCore.pyqtSlot()        
+    def on_pushRest_clicked(self):
+        self.isLongRest = True
+        self.startJob()        
        
 def main():
     

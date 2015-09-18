@@ -32,6 +32,8 @@ err = sys.stderr
 _debug = 0
 log = sys.stdout
 
+MINUTE_LEN = 10
+
 class Timer(QtGui.QMainWindow):
     """
     The Timer class uses the QtTimer to keep count and to display the count-down timer.
@@ -49,7 +51,11 @@ class Timer(QtGui.QMainWindow):
         self.timer = QtCore.QTimer(self)
         self.timer.timeout.connect(self.updateTimerDisplay)
         self.isPaused = False
+        self.isActive = False
+        self.isDone = False       
         self.alarm_times = []
+        self.alarm_types = [] #Globally if there are 2 alarm times : type 0 - working, type 1 - rest
+        self.working_type = -1 # -1 (or something else than 0 or 1) - undefined, 0 - working, 1 - rest              
         self.settingsDialog = None
 
         if (len(timer_values) > 0):
@@ -105,14 +111,8 @@ class Timer(QtGui.QMainWindow):
             self.isPaused = True
         else:
             self.timer.start(1000)
+            self.isActive = True
             self.isPaused = False
-        self.ui.lcdNumber.setStyleSheet("QWidget { background-color: Normal }" )
-
-    def resetTimer(self):
-        self.timer_iter = cycle(self.alarm_times)    
-        self.curTime = self.timer_iter.next()     
-        self.startTimer()
-        self.blinkTimer.stop()
         self.ui.lcdNumber.setStyleSheet("QWidget { background-color: Normal }" )
 
     def settings(self):
@@ -125,28 +125,62 @@ class Timer(QtGui.QMainWindow):
         self.connect(self.settingsDialog, QtCore.SIGNAL("Accept"),self.pullTimes)
 
     def pullTimes(self):
-        self.alarm_times = [int(self.settingsDialog.ui.lineEditAlarm1.text()) * 60, int(self.settingsDialog.ui.lineEditAlarm2.text()) * 60 ]
+        self.alarm_times = [int(self.settingsDialog.ui.lineEditAlarm1.text()) * MINUTE_LEN, int(self.settingsDialog.ui.lineEditAlarm2.text()) * MINUTE_LEN ]
         self.resetTimer()
 
     def setTimer(self, timer_list):
-        self.alarm_times = [x*60 for x in timer_list]
-        self.timer_iter = cycle(self.alarm_times)    # An iterator that cycles through the list
-        self.curTime = self.timer_iter.next()      # Current timer value
+        self.alarm_times = [x*MINUTE_LEN for x in timer_list]
+        self.alarm_types = range(len(self.alarm_times))
+#         self.timer_iter = cycle(self.alarm_times)    # An iterator that cycles through the list
+        self.timer_iter = cycle(self.alarm_types)    # An iterator that cycles through the list        
+#         self.curTime = self.timer_iter.next()      # Current timer value
+        self.working_type = self.timer_iter.next()
+        self.curTime = self.alarm_times[self.working_type]      # Current timer value
+        
+    def resetTimer(self):
+#         self.timer_iter = cycle(self.alarm_times)
+#         self.timer_iter = cycle(self.alarm_types)
+#         self.working_type = self.timer_iter.next()                
+#         self.curTime = self.alarm_times[self.working_type]        
+        self.startTimer()
+        self.blinkTimer.stop()
+        self.ui.lcdNumber.setStyleSheet("QWidget { background-color: Normal }" )
+        self.isActive = True
 
-    def startTimer(self):
+    def startTimer(self):        
         self.timer.start(1000)
+        self.isActive = True
+        self.isDone = False
+        
+    def startJobTimer(self):
+        self.working_type = 0                
+        self.curTime = self.alarm_times[self.working_type]       
+        self.startTimer()
+        self.blinkTimer.stop()
+        self.ui.lcdNumber.setStyleSheet("QWidget { background-color: Normal }" )           
 
+    def stopTimer(self):
+        self.curTime = 0
+        text = "%d:%02d" % (self.curTime/MINUTE_LEN,self.curTime % MINUTE_LEN)
+        self.ui.lcdNumber.display(text)
+        self.isActive = False
+        self.isDone = False
+        self.working_type = -1             
+        self.timer.stop()
+        
     def showTimer(self):
         self.show()
 
     def updateTimerDisplay(self):
-        text = "%d:%02d" % (self.curTime/60,self.curTime % 60)
+        text = "%d:%02d" % (self.curTime/MINUTE_LEN,self.curTime % MINUTE_LEN)
         self.ui.lcdNumber.display(text)
-        if self.curTime == 0:
-            self.timer.stop()
-            self.blinkTimer.start(250)
-        else:
-            self.curTime -= 1
+        if self.isActive :
+            if (self.curTime == 0) :
+                self.timer.stop()
+                self.isDone = True
+                self.blinkTimer.start(250)
+            else:
+                self.curTime -= 1
 
     def toggleTimerColor(self):
         self.color_idx = 3 - self.color_idx
@@ -165,15 +199,26 @@ class Timer(QtGui.QMainWindow):
         if button == 1: # left click
             if (self.curTime == 0): # blinking timer should be closed on a left click
                 self.blinkTimer.stop()
-                self.timer.start(1000)
-                self.curTime = self.timer_iter.next()
+                if self.working_type < 0 :
+                    self.isActive = False
+                    self.isDone = False
+                elif self.working_type != 0 : # the rest is over, so stop and do nothing
+                    self.isActive = False
+                    self.isDone = False
+                    self.working_type = -1
+                else : # the job is over, so going to rest
+                    self.working_type = 1
+                    self.isActive = True
+                    self.isDone = False
+                    self.curTime = self.alarm_times[self.working_type]
+                    self.resetTimer()                    
                 self.ui.lcdNumber.setStyleSheet("QWidget { background-color: Normal }" )
 
     def mouseMoveEvent(self, event):
         if event.buttons() != QtCore.Qt.LeftButton: # not left click
             return 
         
-        self.move(event.globalPos() - self.dragPosition)
+#         self.move(event.globalPos() - self.dragPosition)
 
     def iconActivated(self, reason):
         if reason in (QtGui.QSystemTrayIcon.Trigger, QtGui.QSystemTrayIcon.DoubleClick):
@@ -182,7 +227,7 @@ class Timer(QtGui.QMainWindow):
 
 class SettingsDialog(QtGui.QDialog):
 
-    def __init__(self, parent=None, alarm_times = [25*60,5*60]):
+    def __init__(self, parent=None, alarm_times = [25*MINUTE_LEN,5*MINUTE_LEN]):
         QtGui.QDialog.__init__(self, parent)
         #print "Settings Dialog\n"
         self.setWindowModality(QtCore.Qt.ApplicationModal)             # Make this a application blocking dialog.
@@ -191,8 +236,8 @@ class SettingsDialog(QtGui.QDialog):
         intValidator = QtGui.QIntValidator(0,99,self.ui.lineEditAlarm1) # create a int validator with range from 0 to 60
         self.ui.lineEditAlarm1.setValidator(intValidator);
         self.ui.lineEditAlarm2.setValidator(intValidator);
-        self.ui.lineEditAlarm1.setText(str(alarm_times[0]/60))
-        self.ui.lineEditAlarm2.setText(str(alarm_times[1]/60))
+        self.ui.lineEditAlarm1.setText(str(alarm_times[0]/MINUTE_LEN))
+        self.ui.lineEditAlarm2.setText(str(alarm_times[1]/MINUTE_LEN))
         self.ui.lineEditAlarm1.selectAll();
         self.ui.lineEditAlarm2.selectAll();
 
@@ -216,7 +261,7 @@ class SettingsDialog(QtGui.QDialog):
         self.close();
 
     def accept(self):
-        timer_list = [int(self.ui.lineEditAlarm1.text()) * 60, int(self.ui.lineEditAlarm2.text()) * 60 ]
+        timer_list = [int(self.ui.lineEditAlarm1.text()) * MINUTE_LEN, int(self.ui.lineEditAlarm2.text()) * MINUTE_LEN ]
         self.emit(QtCore.SIGNAL("Accept"))
         self.close();
 

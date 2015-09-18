@@ -15,7 +15,7 @@ class Ui_Form(object):
 #        Form.resize(74, 35)
         Form.resize(14, 35)
         self.lcdNumber = QtGui.QLCDNumber(Form)
-        self.lcdNumber.setGeometry(QtCore.QRect(1, 1, 71, 31))
+        self.lcdNumber.setGeometry(QtCore.QRect(1, 1, 65, 31))
         self.lcdNumber.setObjectName("lcdNumber")
          
         self.retranslateUi(Form)
