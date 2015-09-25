@@ -19,7 +19,7 @@ import readconf
 import os
 from pztimer import Timer
 
-MIN_POMODORO_BEFORE_REST = 1
+MIN_POMODORO_BEFORE_REST = 4
 
 class Model(QtGui.QStandardItemModel):
 
@@ -46,7 +46,6 @@ class Example(QtGui.QWidget):
         self.colnames = ["task","status","created","tags"]
         self.current_job=None
         self.jobs_done = 0
-        self.isLongRest = False
         
         self.initUI()
         
@@ -61,8 +60,8 @@ class Example(QtGui.QWidget):
 #         else:
 #             event.ignore()
 
-#         self.hide()
-#         event.ignore()
+        self.hide()
+        event.ignore()
         
 #         if self.trayMsgDisplayed == False:
 #             
@@ -77,25 +76,29 @@ class Example(QtGui.QWidget):
     def unhideWindow(self):
         self.show()           
         
-    def initUI(self):        
+    def initUI(self):
         
-        rMinusIcon = QtGui.QPixmap("Resources/button_minus_red.png")
-        rPlusIcon = QtGui.QPixmap("Resources/button_plus_green.png")
-        rLoadIcon = QtGui.QPixmap("Resources/load.png")
-        rWriteIcon = QtGui.QPixmap("Resources/write.png")
-        rDoneIcon = QtGui.QPixmap("Resources/done.png")               
-        rUnDoneIcon = QtGui.QPixmap("Resources/undone.png")
-        rStartAlarm = QtGui.QPixmap("Resources/start_alarm.png")
-        rStopAlarm = QtGui.QPixmap("Resources/stop_alarm.png")
+        app_path=os.path.dirname(__file__)
+#         print app_path 
+        
+        rMinusIcon = QtGui.QPixmap(os.path.join(app_path,"Resources/button_minus_red.png"))
+        rPlusIcon = QtGui.QPixmap(os.path.join(app_path,"Resources/button_plus_green.png"))
+#        rLoadIcon = QtGui.QPixmap(":Icons/load.png")
+        rWriteIcon = QtGui.QPixmap(os.path.join(app_path,"Resources/write.png"))
+        rDoneIcon = QtGui.QPixmap(os.path.join(app_path,"Resources/done.png"))            
+        rUnDoneIcon = QtGui.QPixmap(os.path.join(app_path,"Resources/undone.png"))
+        rStartAlarm = QtGui.QPixmap(os.path.join(app_path,"Resources/start_alarm.png"))
+        rStopAlarm = QtGui.QPixmap(os.path.join(app_path,"Resources/stop_alarm.png"))
         # Icon made by Freepik from www.flaticon.com
-        rRest = QtGui.QPixmap("Resources/rest.png")
+        rRest = QtGui.QPixmap(os.path.join(app_path,"Resources/rest.png"))
         
         self.setGeometry(300, 300, 600, 330)
         self.setWindowTitle('pzTimer')
-        self.setWindowIcon(QtGui.QIcon('web.png'))
+        self.setWindowIcon(QtGui.QIcon(os.path.join(app_path,'web.png')))
         
         #self.model = QtGui.QStandardItemModel(self)
-        self.model = Model()        
+        self.model = Model()
+        self.model.itemChanged.connect(self.on_dataChanged)
         
         for i in range(len(self.colnames)) :
             self.model.setHeaderData(i, QtCore.Qt.Horizontal, self.colnames[i])
@@ -159,7 +162,9 @@ class Example(QtGui.QWidget):
         self.checkShowDone.stateChanged.connect(self.on_checkbox_changed)
 #         self.pushButtonAdd.clicked.connect(self.on_pushButtonAdd_clicked)   
 
-        self.myTimer = Timer([1,2])
+        #self.myTimer = Timer([1,2])
+        self.myTimer = Timer([25,5])        
+        self.myTimer.isLongRest = False        
         
         self.statusBar = QtGui.QStatusBar(self)
         self.statusBar.setSizeGripEnabled(False)
@@ -250,15 +255,17 @@ class Example(QtGui.QWidget):
     def setTableView(self):
         #self.tableView = QtGui.QTableWidget(self)
         self.tableView.setModel(self.model)        
-        self.tableView.setColumnWidth(0,350)
-        self.tableView.setColumnWidth(1,50)
-        self.tableView.setColumnWidth(2,50)
-        self.tableView.setColumnWidth(2,100)        
+        self.tableView.setColumnWidth(0,275)
+        self.tableView.setColumnWidth(1,75)
+        self.tableView.setColumnWidth(2,75)
+        self.tableView.setColumnWidth(2,125)        
         self.tableView.horizontalHeader().setStretchLastSection(True)
         #self.tableView.setHorizontalHeaderLabels(['a', 'b', 'c', 'd', 'e'])        
 
     def loadCsv(self, fileName):
         self.clearModel()
+        if not os.path.isfile(fileName) :
+            open(fileName, 'a').close()
         fileInput=open(fileName, "rb")
         for row in csv.reader(fileInput,delimiter=';'):
             if ''.join(row).strip() :                                    
@@ -336,7 +343,7 @@ class Example(QtGui.QWidget):
         
     def startJob(self):
         if (not self.myTimer.isActive ) :
-            if self.isLongRest :
+            if self.myTimer.isLongRest :
                 self.current_job = -1
                 self.myTimer.startJobTimer()
                 message = "Starting Long Rest :-) "
@@ -357,7 +364,8 @@ class Example(QtGui.QWidget):
         #print self.myTimer.curTime
         if self.current_job is not None :
             self.current_job = None
-            self.isLongRest = False
+# Stop self.myTimer.isLongRest = False is done in self.myTimer.stopTimer(), not need to do it here             
+#             self.myTimer.isLongRest = False
             self.myTimer.stopTimer()
             
     def enableRestButton(self):
@@ -370,26 +378,39 @@ class Example(QtGui.QWidget):
             
     def checkTimer(self):
         # Check if job is finished
-        if (self.myTimer.isDone) and ( self.current_job is not None ) :
-#             print self.model.item(self.current_job,1).data(QtCore.Qt.DisplayRole).toString().toInt()[0]
-            if not self.isLongRest :
+        #if (self.myTimer.isDone) and ( self.current_job is not None ) :
+        if (self.myTimer.isDone) :
+            self.sendNotification()
+            print self.myTimer.working_type
+            self.myTimer.isDone = False
+            if (not self.myTimer.isLongRest) and ( self.current_job is not None ) :
                 self.model.item(self.current_job,1).setData(self.model.item(self.current_job,1).data(QtCore.Qt.DisplayRole).toString().toInt()[0]+1,QtCore.Qt.EditRole)
                 self.writeCsv("/home/paul/.doit")    
                 self.loadCsv("/home/paul/.doit")
-                self.current_job = None
-                self.myTimer.isDone = False
+                self.current_job = None                
                 self.jobs_done+=1
+            elif self.myTimer.isLongRest :
+                self.current_job = None                
+                self.myTimer.isLongRest = False
+                self.jobs_done=0                            
             else :
                 self.current_job = None
-                self.myTimer.isDone = False
-                self.isLongRest = False
-                self.jobs_done=0                
             # Check if job is finished            
         if self.jobs_done >= MIN_POMODORO_BEFORE_REST :
             self.enableRestButton()
         else :
-            self.disableRestButton()
-#             self.statusBar.showMessage("You does not work enough for have a long rest.")                            
+            self.disableRestButton()        
+#             self.statusBar.showMessage("You does not work enough for have a long rest.")
+
+    def sendNotification(self):        
+            if self.myTimer.isLongRest :
+                self.trayIcon.showMessage("","The Long Rest is over! It's time to hard working.",QtGui.QSystemTrayIcon().Information,0)
+            elif self.myTimer.working_type == 0 :
+                self.trayIcon.showMessage("","The Work is Over! Have a little rest now.",QtGui.QSystemTrayIcon().NoIcon,0)
+            elif self.myTimer.working_type == 1 :
+                self.trayIcon.showMessage("","The little rest is over! You should work now",QtGui.QSystemTrayIcon().Information,0)
+            else :
+                self.trayIcon.showMessage("","Something happen",QtGui.QSystemTrayIcon().Information,0)
 
 #=========EVENTS    
     @QtCore.pyqtSlot()
@@ -432,8 +453,13 @@ class Example(QtGui.QWidget):
 
     @QtCore.pyqtSlot()        
     def on_pushRest_clicked(self):
-        self.isLongRest = True
+        self.myTimer.isLongRest = True
         self.startJob()        
+
+    @QtCore.pyqtSlot()        
+    def on_dataChanged(self):
+        self.writeCsv("/home/paul/.doit")
+
        
 def main():
     

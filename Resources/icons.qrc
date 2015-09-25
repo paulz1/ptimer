@@ -1,5 +1,6 @@
 <RCC>
   <qresource prefix="Icons">
     <file>bell.png</file>
+    <file>load.png</file>
   </qresource>
 </RCC>
