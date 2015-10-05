@@ -182,6 +182,9 @@ class Timer(QtGui.QMainWindow):
                 self.isDone = True                
                 if not self.isLongRest :
                     self.blinkTimer.start(250)
+                else :
+                    self.isActive = False
+                    self.working_type = -1
             else:
                 self.curTime -= 1
 
@@ -205,7 +208,7 @@ class Timer(QtGui.QMainWindow):
                 self.isDone = False                
                 if self.working_type < 0 :
                     self.isActive = False
-                elif self.working_type != 0 : # the rest is over, so stop and do nothing
+                elif self.working_type != 0 : # we were in the rest mode, but the rest is over, so stop and do nothing
                     self.isActive = False
                     self.working_type = -1
                 else : # the job is over, so going to rest
