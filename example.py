@@ -311,13 +311,18 @@ class Example(QtGui.QWidget):
             
     def markDone(self):
         selection=self.tableView.selectionModel().selectedRows()
+#         selection=self.tableView.selectedIndex()
+                
+        if not selection :
+            selection=self.tableView.selectedIndexes() 
+           
         for cur in selection :            
-            # print cur.row()
+            print cur.row()
 #             print self.model.item(cur.row(),0).data(QtCore.Qt.DisplayRole).toString()
-            if not str(self.model.item(cur.row(),0).data(QtCore.Qt.DisplayRole).toString()).startswith("#") :
-                self.model.item(cur.row(),0).setData("#"+self.model.item(cur.row(),0).data(QtCore.Qt.DisplayRole).toString(),QtCore.Qt.EditRole)
-            self.writeCsv("/home/paul/.doit")    
-            self.loadCsv("/home/paul/.doit")
+#             if not str(self.model.item(cur.row(),0).data(QtCore.Qt.DisplayRole).toString()).startswith("#") :
+#                 self.model.item(cur.row(),0).setData("#"+self.model.item(cur.row(),0).data(QtCore.Qt.DisplayRole).toString(),QtCore.Qt.EditRole)
+#             self.writeCsv("/home/paul/.doit")    
+#             self.loadCsv("/home/paul/.doit")
             
     def markUnDone(self):
         selection=self.tableView.selectionModel().selectedRows()
