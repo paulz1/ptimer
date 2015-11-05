@@ -31,18 +31,16 @@ class Model(QtGui.QStandardItemModel):
     def data(self, index, role):        
 #         print index.data().toString()
         model=index.model()
-#        print QtGui.QStandardItemModel.data(self,model.index(index.row(), 0),QtCore.Qt.DisplayRole).toString()
-#        if index.row() == 3 and role == QtCore.Qt.BackgroundRole:
         if str(QtGui.QStandardItemModel.data(self,model.index(index.row(), 0),QtCore.Qt.DisplayRole).toString()).startswith("#") and role == QtCore.Qt.BackgroundRole:            
             return QtCore.QVariant(QtGui.QBrush(QtCore.Qt.gray))                
         else:
             return QtGui.QStandardItemModel.data(self, index, role)
 
-class Example(QtGui.QWidget):
+class PZtimer(QtGui.QWidget):
 #class Example(QtGui.QMainWindow,form):
     
     def __init__(self):
-        super(Example, self).__init__()
+        super(PZtimer, self).__init__()
         self.curConf=readconf.readConf(os.path.expanduser('~')+"/.config/pztimer/config.ini")
         self.colnames = ["task","status","created","tags"]
         self.current_job=None
@@ -79,9 +77,14 @@ class Example(QtGui.QWidget):
         
     def initUI(self):
         
-        app_path=os.path.dirname(__file__)
-#         print app_path 
+        x_position=300
+        y_position=300
+        width=600
+        height=350        
         
+        app_path=os.path.dirname(__file__)
+
+#Icons        
         rMinusIcon = QtGui.QPixmap(os.path.join(app_path,"Resources/button_minus_red.png"))
         rPlusIcon = QtGui.QPixmap(os.path.join(app_path,"Resources/button_plus_green.png"))
 #        rLoadIcon = QtGui.QPixmap(":Icons/load.png")
@@ -92,8 +95,9 @@ class Example(QtGui.QWidget):
         rStopAlarm = QtGui.QPixmap(os.path.join(app_path,"Resources/stop_alarm.png"))
         # Icon made by Freepik from www.flaticon.com
         rRest = QtGui.QPixmap(os.path.join(app_path,"Resources/rest.png"))
+#End of Icons        
         
-        self.setGeometry(300, 300, 600, 330)
+        self.setGeometry(x_position,y_position,width,height)
         self.setWindowTitle('pzTimer')
         self.setWindowIcon(QtGui.QIcon(os.path.join(app_path,'web.png')))
         
@@ -108,14 +112,15 @@ class Example(QtGui.QWidget):
         self.tableView = QtGui.QTableView(self)
         self.setTableView()
         self.loadCsv("/home/paul/.doit")
- 
+
+# Buttons 
 #         self.pushButtonLoad = QtGui.QPushButton(self)
 #         self.pushButtonLoad.setIcon(QtGui.QIcon(rLoadIcon))
 #         self.pushButtonLoad.setToolTip("Load Csv File!")
 #         self.pushButtonLoad.clicked.connect(self.on_pushButtonLoad_clicked)
  
         self.pushButtonWrite = QtGui.QPushButton(self)
-        self.pushButtonWrite.setIcon(QtGui.QIcon(rWriteIcon))        
+        self.pushButtonWrite.setIcon(QtGui.QIcon(rWriteIcon))   
         self.pushButtonWrite.setToolTip("Write Csv File!")
         self.pushButtonWrite.clicked.connect(self.on_pushButtonWrite_clicked)
         
@@ -140,9 +145,17 @@ class Example(QtGui.QWidget):
         self.pushButtonUnDone.setToolTip("UnComment task")        
         self.pushButtonUnDone.clicked.connect(self.on_pushButtonUnDone_clicked)
 
+#         self.pushStartTimer = QtGui.QPushButton(self)
+#         self.pushStartTimer.setIcon(QtGui.QIcon(rStartAlarm))
+#         self.pushStartTimer.setToolTip("Start Timer for a job")         
+#         self.pushStartTimer.clicked.connect(self.on_pushStart_clicked)
+
         self.pushStartTimer = QtGui.QPushButton(self)
+#         self.pushStartTimer = QtGui.QToolButton(self)
         self.pushStartTimer.setIcon(QtGui.QIcon(rStartAlarm))
-        self.pushStartTimer.setToolTip("Start Timer for a job")        
+        self.pushStartTimer.setToolTip("Start Timer for a job")
+#         self.pushStartTimer.setToolButtonStyle(QtCore.Qt.ToolButtonTextUnderIcon)
+#         self.pushStartTimer.setText("Start Job")
         self.pushStartTimer.clicked.connect(self.on_pushStart_clicked)
 
         self.pushStopTimer = QtGui.QPushButton(self)
@@ -161,7 +174,15 @@ class Example(QtGui.QWidget):
         else :
             self.checkShowDone.setCheckState(QtCore.Qt.Unchecked)
         self.checkShowDone.stateChanged.connect(self.on_checkbox_changed)
-#         self.pushButtonAdd.clicked.connect(self.on_pushButtonAdd_clicked)   
+        
+        self.checkWoTask = QtGui.QCheckBox("Timer without Task",self)
+        if int(self.curConf.config["WithoutTask"])!=0 :
+            self.checkWoTask.setCheckState(QtCore.Qt.Checked)
+        else :
+            self.checkWoTask.setCheckState(QtCore.Qt.Unchecked)
+        self.checkWoTask.stateChanged.connect(self.on_checkbox_changed)
+        
+# End of Buttons   
 
         #self.myTimer = Timer([1,2])
         self.myTimer = Timer([25,5])        
@@ -185,7 +206,8 @@ class Example(QtGui.QWidget):
         self.buttonLayout.addWidget(self.tableView,1,0,1,8)
                 
         self.buttonLayout.addWidget(self.checkShowDone,2,0)
-        self.buttonLayout.addWidget(self.myTimer,2,5,1,2)
+        self.buttonLayout.addWidget(self.checkWoTask,2,1)
+        self.buttonLayout.addWidget(self.myTimer,2,5)
         
         self.buttonLayout.addWidget(self.statusBar,3,0,1,8)
 #         self.pushRestTimer.setStyleSheet("QWidget { background-color: #aeadac }")
@@ -209,8 +231,7 @@ class Example(QtGui.QWidget):
         self.intTimer.start(500)
         
         # Display
-        self.trayIcon.show()             
-        
+        self.trayIcon.show()        
           
 
     def createMenu(self):
@@ -303,31 +324,21 @@ class Example(QtGui.QWidget):
         fileOutput.close()                
                 
     def removeLine(self):
-        #print [ x.row() for x in self.tableView.selectionModel().selection().indexes() ]
-        selection=self.tableView.selectionModel().selectedRows()
-        print selection
-        for cur in selection :
+        for cur in self.getSectedRows() :
             #print cur.row()
             self.model.removeRow(cur.row())                
             
-    def markDone(self):
-        selection=self.tableView.selectionModel().selectedRows()
-#         selection=self.tableView.selectedIndex()
-                
-        if not selection :
-            selection=self.tableView.selectedIndexes() 
-           
-        for cur in selection :            
-            print cur.row()
-#             print self.model.item(cur.row(),0).data(QtCore.Qt.DisplayRole).toString()
-#             if not str(self.model.item(cur.row(),0).data(QtCore.Qt.DisplayRole).toString()).startswith("#") :
-#                 self.model.item(cur.row(),0).setData("#"+self.model.item(cur.row(),0).data(QtCore.Qt.DisplayRole).toString(),QtCore.Qt.EditRole)
-#             self.writeCsv("/home/paul/.doit")    
-#             self.loadCsv("/home/paul/.doit")
+    def markDone(self):          
+        for cur in self.getSectedRows():            
+            print self.model.item(cur.row(),0).data(QtCore.Qt.DisplayRole).toString()
+            if not str(self.model.item(cur.row(),0).data(QtCore.Qt.DisplayRole).toString()).startswith("#") :
+                self.model.item(cur.row(),0).setData("#"+self.model.item(cur.row(),0).data(QtCore.Qt.DisplayRole).toString(),QtCore.Qt.EditRole)
+            self.writeCsv("/home/paul/.doit")    
+            self.loadCsv("/home/paul/.doit")
             
     def markUnDone(self):
         selection=self.tableView.selectionModel().selectedRows()
-        for cur in selection :            
+        for cur in self.getSectedRows() :            
             if str(self.model.item(cur.row(),0).data(QtCore.Qt.DisplayRole).toString()).startswith("#") :
                 self.model.item(cur.row(),0).setData(self.model.item(cur.row(),0).data(QtCore.Qt.DisplayRole).toString()[1:],QtCore.Qt.EditRole)
             self.writeCsv("/home/paul/.doit")    
@@ -355,8 +366,7 @@ class Example(QtGui.QWidget):
                 message = "Starting Long Rest :-) "
             elif self.myTimer.working_type!=1 :            
                 message = "No job was selected, nothing to start"
-                selection=self.tableView.selectionModel().selectedRows()
-                for cur in selection :
+                for cur in self.getSectedRows() :
                     self.current_job = cur.row()
                     self.myTimer.startJobTimer()
                     message = "Starting job : " + str(cur.row())
@@ -417,6 +427,15 @@ class Example(QtGui.QWidget):
                 self.trayIcon.showMessage("","The little rest is over! You should work now",QtGui.QSystemTrayIcon().Information,0)
             else :
                 self.trayIcon.showMessage("","Something happen",QtGui.QSystemTrayIcon().Information,0)
+                
+    def getSectedRows(self):
+        selection=self.tableView.selectionModel().selectedRows()
+#         selection=self.tableView.selectedIndex()
+                
+        if not selection :
+            selection=self.tableView.selectedIndexes()
+            
+        return selection
 
 #=========EVENTS    
     @QtCore.pyqtSlot()
@@ -471,7 +490,7 @@ def main():
     
     app = QtGui.QApplication(sys.argv)
     
-    ex = Example()
+    ex = PZtimer()
     ex.show()
     
     sys.exit(app.exec_())

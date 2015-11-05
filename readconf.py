@@ -15,7 +15,7 @@ class readConf():
 #         self.Config.read(file_name)
         self.confFile=file_name
         self.config={}
-        default_values={"JobsFile":"~/.doit","ShowDone":1}        
+        default_values={"JobsFile":"~/.doit","ShowDone":1,"WithoutTask":1}        
         self.Config = SafeConfigParser()       
         self.Config.read(self.confFile)        
 #         print Config.get("Options", "JobsFile")
@@ -28,6 +28,7 @@ class readConf():
                 self.config[cur_opt] = self.Config.get(section, cur_opt)
             except:
                 print("Exception while read config file. No %s option found! Use default value." % cur_opt)
+                self.config[cur_opt] = default_values[cur_opt]
                 #sys.exit(1)
             
     def writeShowDoneConf(self,newShowDone):
