@@ -17,7 +17,8 @@ import csv
 from PyQt4 import QtGui, QtCore, uic
 import readconf
 import os
-from pztimer import Timer
+
+from pztimer_core import Timer
 
 MIN_POMODORO_BEFORE_REST = 4
 
