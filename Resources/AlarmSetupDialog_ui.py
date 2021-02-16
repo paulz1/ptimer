@@ -61,4 +61,5 @@ class Ui_DialogAlarmSetup(object):
 
 # from icons_rc import *
 import importlib
-importlib.import_module("Resources.icons_rc.py",package="icons_rc")
+# importlib.import_module("Resources.icons_rc.py",package=None)
+importlib.import_module("Resources.icons_rc",package=None)
