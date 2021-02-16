@@ -5,7 +5,7 @@ Created on Aug 10, 2015
 '''
 
 import sys
-from ConfigParser import SafeConfigParser
+from configparser import SafeConfigParser
 
 
 class readConf():

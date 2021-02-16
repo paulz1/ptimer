@@ -282,7 +282,7 @@ def usage():
 	print >>err, __doc__
 
 def printTest():
-    print "test printTest()"
+    print("test printTest()")
 
 if __name__ == "__main__":
     app = QtGui.QApplication(sys.argv)

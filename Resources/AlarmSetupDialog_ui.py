@@ -59,4 +59,6 @@ class Ui_DialogAlarmSetup(object):
         self.lineEditAlarm2.setToolTip(QtGui.QApplication.translate("DialogAlarmSetup", "minutes", None, QtGui.QApplication.UnicodeUTF8))
         self.lineEditAlarm2.setText(QtGui.QApplication.translate("DialogAlarmSetup", "0", None, QtGui.QApplication.UnicodeUTF8))
 
-import icons_rc
+# from icons_rc import *
+import importlib
+importlib.import_module("icons_rc")
