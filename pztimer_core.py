@@ -4,7 +4,7 @@ pztimer - A reverse counting timer with multiple subsequent timers.
 Clone of ptimer project of Amjith Ramanujam (amjith@gmail.com).
 Cloned for add some additional functionality.
 
-Usage: 
+Usage:
 pztimer.py val1 [val2 ...]
 
 Example: (Starts a timer for 10mins and then for 15mins when 10mins expires)
@@ -42,21 +42,21 @@ class Timer(QtGui.QMainWindow):
     def __init__(self, timer_values, parent=None):
         #QtGui.QWidget.__init__(self, parent)
         #QtGui.QMainWindow.__init__(self, None, QtCore.Qt.WindowStaysOnTopHint|QtCore.Qt.FramelessWindowHint)
-        QtGui.QMainWindow.__init__(self, None, QtCore.Qt.WindowStaysOnTopHint)        
+        QtGui.QMainWindow.__init__(self, None, QtCore.Qt.WindowStaysOnTopHint)
         self.ui = Ui_Form()
         self.ui.setupUi(self)
 
-        # Initialization 
+        # Initialization
 
         self.timer = QtCore.QTimer(self)
         self.timer.timeout.connect(self.updateTimerDisplay)
         self.isPaused = False
         self.isActive = False
-        self.isDone = False       
-        self.isLongRest = False        
+        self.isDone = False
+        self.isLongRest = False
         self.alarm_times = []
         self.alarm_types = [0,1] #Globally there are 2 alarm times : type 0 - work or long rest, 1 - short rest
-        self.working_type = -1 # -1 (or something else than 0 or 1) - undefined, 0 - working, 1 - rest              
+        self.working_type = -1 # -1 (or something else than 0 or 1) - undefined, 0 - working, 1 - rest
         self.settingsDialog = None
 
         if (len(timer_values) > 0):
@@ -84,7 +84,7 @@ class Timer(QtGui.QMainWindow):
                 triggered=self.settings)
         self.quitAction = QtGui.QAction("&Quit", self,
                 triggered=QtGui.qApp.quit)
-        
+
         self.contextMenu.addAction(self.toggleTimerAction)
         self.contextMenu.addAction(self.pauseTimerAction)
         self.contextMenu.addAction(self.resetTimerAction)
@@ -92,7 +92,7 @@ class Timer(QtGui.QMainWindow):
         self.contextMenu.addAction(self.settingsAction)
         self.contextMenu.addSeparator()
         self.contextMenu.addAction(self.quitAction)
-        
+
     def settings(self):
         if not self.settingsDialog:
             if (self.alarm_times):
@@ -100,11 +100,11 @@ class Timer(QtGui.QMainWindow):
             else:
                 self.settingsDialog = SettingsDialog(self)
         self.settingsDialog.show()
-        self.connect(self.settingsDialog, QtCore.SIGNAL("Accept"),self.pullTimes)        
+        self.connect(self.settingsDialog, QtCore.SIGNAL("Accept"),self.pullTimes)
 
     def toggleTimer(self):
         """
-        Toggles the display of the timer. 
+        Toggles the display of the timer.
         """
         try:
             if self.ui.lcdNumber.isVisible():
@@ -133,32 +133,33 @@ class Timer(QtGui.QMainWindow):
         self.alarm_times = [x*MINUTE_LEN for x in timer_list]
 #         self.alarm_types = range(len(self.alarm_times))
 #         self.timer_iter = cycle(self.alarm_times)    # An iterator that cycles through the list
-        self.timer_iter = cycle(self.alarm_types)    # An iterator that cycles through the list        
+        self.timer_iter = cycle(self.alarm_types)    # An iterator that cycles through the list
 #         self.curTime = self.timer_iter.next()      # Current timer value
-        self.working_type = self.timer_iter.next()
+        # self.working_type = self.timer_iter.next() old py2 style
+        self.working_type = next(self.timer_iter)
         self.curTime = self.alarm_times[self.working_type]      # Current timer value
-        
+
     def resetTimer(self):
 #         self.timer_iter = cycle(self.alarm_times)
 #         self.timer_iter = cycle(self.alarm_types)
-#         self.working_type = self.timer_iter.next()                
-#         self.curTime = self.alarm_times[self.working_type]        
+#         self.working_type = self.timer_iter.next()
+#         self.curTime = self.alarm_times[self.working_type]
         self.startTimer()
         self.blinkTimer.stop()
         self.ui.lcdNumber.setStyleSheet("QWidget { background-color: Normal }" )
         self.isActive = True
 
-    def startTimer(self):        
+    def startTimer(self):
         self.timer.start(1000)
         self.isActive = True
         self.isDone = False
-        
+
     def startJobTimer(self):
-        self.working_type = 0                
-        self.curTime = self.alarm_times[self.working_type]       
+        self.working_type = 0
+        self.curTime = self.alarm_times[self.working_type]
         self.startTimer()
         self.blinkTimer.stop()
-        self.ui.lcdNumber.setStyleSheet("QWidget { background-color: Normal }" )           
+        self.ui.lcdNumber.setStyleSheet("QWidget { background-color: Normal }" )
 
     def stopTimer(self):
         self.curTime = 0
@@ -166,10 +167,10 @@ class Timer(QtGui.QMainWindow):
         self.ui.lcdNumber.display(text)
         self.isActive = False
         self.isDone = False
-        self.isLongRest = False # If LongRest is stopped, it's over        
-        self.working_type = -1             
-        self.timer.stop()        
-        
+        self.isLongRest = False # If LongRest is stopped, it's over
+        self.working_type = -1
+        self.timer.stop()
+
     def showTimer(self):
         self.show()
 
@@ -179,7 +180,7 @@ class Timer(QtGui.QMainWindow):
         if self.isActive :
             if (self.curTime == 0) :
                 self.timer.stop()
-                self.isDone = True                
+                self.isDone = True
                 if not self.isLongRest :
                     self.blinkTimer.start(250)
                 else :
@@ -205,7 +206,7 @@ class Timer(QtGui.QMainWindow):
         if button == 1: # left click
             if (self.curTime == 0): # blinking timer should be closed on a left click
                 self.blinkTimer.stop()
-                self.isDone = False                
+                self.isDone = False
                 if self.working_type < 0 :
                     self.isActive = False
                 elif self.working_type != 0 : # we were in the rest mode, but the rest is over, so stop and do nothing
@@ -215,18 +216,18 @@ class Timer(QtGui.QMainWindow):
                     self.working_type = 1
                     self.isActive = True
                     self.curTime = self.alarm_times[self.working_type]
-                    self.resetTimer()                    
+                    self.resetTimer()
                 self.ui.lcdNumber.setStyleSheet("QWidget { background-color: Normal }" )
 
     def mouseMoveEvent(self, event):
         if event.buttons() != QtCore.Qt.LeftButton: # not left click
-            return 
-        
+            return
+
 #         self.move(event.globalPos() - self.dragPosition)
 
     def iconActivated(self, reason):
         if reason in (QtGui.QSystemTrayIcon.Trigger, QtGui.QSystemTrayIcon.DoubleClick):
-            self.toggleTimer()            
+            self.toggleTimer()
 
 
 class SettingsDialog(QtGui.QDialog):
@@ -293,6 +294,5 @@ if __name__ == "__main__":
     QtGui.QApplication.setQuitOnLastWindowClosed(False)
     timerList = Str2Num(sys.argv[1:])
     #myapp = Timer(timerList)
-    myapp = Timer([25,5])    
+    myapp = Timer([25,5])
     sys.exit(app.exec_())
-

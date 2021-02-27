@@ -31,8 +31,10 @@ class Model(QtGui.QStandardItemModel):
     def data(self, index, role):
 #         print index.data().toString()
         model=index.model()
-        if str(QtGui.QStandardItemModel.data(self,model.index(index.row(), 0),QtCore.Qt.DisplayRole).toString()).startswith("#") and role == QtCore.Qt.BackgroundRole:
-            return QtCore.QVariant(QtGui.QBrush(QtCore.Qt.gray))
+        # if str(QtGui.QStandardItemModel.data(self,model.index(index.row(), 0),QtCore.Qt.DisplayRole).toString()).startswith("#") and role == QtCore.Qt.BackgroundRole: # old py2 style
+        if str(QtGui.QStandardItemModel.data(self,model.index(index.row(), 0),QtCore.Qt.DisplayRole)).startswith("#") and role == QtCore.Qt.BackgroundRole:
+            # return QtCore.QVariant(QtGui.QBrush(QtCore.Qt.gray)) #old py2
+            return QtGui.QBrush(QtCore.Qt.gray)
         else:
             return QtGui.QStandardItemModel.data(self, index, role)
 
@@ -288,7 +290,8 @@ class PZtimer(QtGui.QWidget):
         self.clearModel()
         if not os.path.isfile(fileName) :
             open(fileName, 'a').close()
-        fileInput=open(fileName, "rb")
+        # fileInput=open(fileName, "rb") # old py2
+        fileInput=open(fileName, "r")
         for row in csv.reader(fileInput,delimiter=';'):
             if ''.join(row).strip() :
                 items = [
@@ -307,7 +310,8 @@ class PZtimer(QtGui.QWidget):
     def writeCsv(self, fileName):
         os.rename(os.path.realpath(fileName), os.path.realpath(fileName)+"~")
 
-        with open(fileName, "wb") as fileOutput:
+        # with open(fileName, "wb") as fileOutput: # old py2
+        with open(fileName, "w") as fileOutput:
             writer = csv.writer(fileOutput,delimiter=';')
             for rowNumber in range(self.model.rowCount()):
                 fields = [
@@ -318,7 +322,8 @@ class PZtimer(QtGui.QWidget):
                     for columnNumber in range(self.model.columnCount())
                 ]
 #                 fields[0], fields[1] = fields[1], fields[0]
-                fields=[ str(x.toString()) for x in fields ]
+                # fields=[ str(x.toString()) for x in fields ] # old py2
+                fields=[ str(x) for x in fields ]
                 print(fields)
                 writer.writerow(fields)
         fileOutput.close()
@@ -330,17 +335,17 @@ class PZtimer(QtGui.QWidget):
 
     def markDone(self):
         for cur in self.getSectedRows():
-            print(self.model.item(cur.row(),0).data(QtCore.Qt.DisplayRole).toString())
-            if not str(self.model.item(cur.row(),0).data(QtCore.Qt.DisplayRole).toString()).startswith("#") :
-                self.model.item(cur.row(),0).setData("#"+self.model.item(cur.row(),0).data(QtCore.Qt.DisplayRole).toString(),QtCore.Qt.EditRole)
+            print(self.model.item(cur.row(),0).data(QtCore.Qt.DisplayRole))
+            if not str(self.model.item(cur.row(),0).data(QtCore.Qt.DisplayRole)).startswith("#") :
+                self.model.item(cur.row(),0).setData("#"+self.model.item(cur.row(),0).data(QtCore.Qt.DisplayRole),QtCore.Qt.EditRole)
             self.writeCsv("/home/paul/.doit")
             self.loadCsv("/home/paul/.doit")
 
     def markUnDone(self):
         selection=self.tableView.selectionModel().selectedRows()
         for cur in self.getSectedRows() :
-            if str(self.model.item(cur.row(),0).data(QtCore.Qt.DisplayRole).toString()).startswith("#") :
-                self.model.item(cur.row(),0).setData(self.model.item(cur.row(),0).data(QtCore.Qt.DisplayRole).toString()[1:],QtCore.Qt.EditRole)
+            if str(self.model.item(cur.row(),0).data(QtCore.Qt.DisplayRole)).startswith("#") :
+                self.model.item(cur.row(),0).setData(self.model.item(cur.row(),0).data(QtCore.Qt.DisplayRole)[1:],QtCore.Qt.EditRole)
             self.writeCsv("/home/paul/.doit")
             self.loadCsv("/home/paul/.doit")
 
