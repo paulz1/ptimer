@@ -47,6 +47,7 @@ class PZtimer(QtGui.QWidget):
         self.colnames = ["task","status","created","tags"]
         self.current_job=None
         self.jobs_done = 0
+        self.unsaved_changes = False
 
         self.initUI()
 
@@ -236,6 +237,16 @@ class PZtimer(QtGui.QWidget):
         self.trayIcon.show()
 
 
+    def checkUnsaved_and_Quit(self):
+        if self.unsaved_changes :
+            if QtGui.QMessageBox.question(None,
+                                          '',
+                                          "It seems that you have unsaved changes (usually if you remove some rows). Do you want to save them?",
+                                          QtGui.QMessageBox.Yes | QtGui.QMessageBox.No,
+                                          QtGui.QMessageBox.Yes) == QtGui.QMessageBox.Yes :
+                self.writeCsv("/home/paul/.doit")
+        QtGui.qApp.quit()
+
     def createMenu(self):
         """
         This menu will be used as the context menu for the systray and the timer window.
@@ -250,8 +261,10 @@ class PZtimer(QtGui.QWidget):
                 triggered=self.myTimer.resetTimer)
         self.settingsAction = QtGui.QAction("&Settings", self,
                 triggered=self.myTimer.settings)
-        self.quitAction = QtGui.QAction("&Quit", self,
-                triggered=QtGui.qApp.quit)
+        # self.quitAction = QtGui.QAction("&Quit", self,
+        #         triggered=QtGui.qApp.quit)
+        self.quitAction = QtGui.QAction("&Quit", self)
+        self.quitAction.triggered.connect(self.checkUnsaved_and_Quit)
 
         self.contextMenu.addAction(self.toggleWindowAction)
 #         self.contextMenu.addAction(self.toggleTimerAction)
@@ -310,7 +323,6 @@ class PZtimer(QtGui.QWidget):
     def writeCsv(self, fileName):
         os.rename(os.path.realpath(fileName), os.path.realpath(fileName)+"~")
 
-        # with open(fileName, "wb") as fileOutput: # old py2
         with open(fileName, "w") as fileOutput:
             writer = csv.writer(fileOutput,delimiter=';')
             for rowNumber in range(self.model.rowCount()):
@@ -322,16 +334,19 @@ class PZtimer(QtGui.QWidget):
                     for columnNumber in range(self.model.columnCount())
                 ]
 #                 fields[0], fields[1] = fields[1], fields[0]
-                # fields=[ str(x.toString()) for x in fields ] # old py2
                 fields=[ str(x) for x in fields ]
                 print(fields)
                 writer.writerow(fields)
         fileOutput.close()
+        self.unsaved_changes = False
 
     def removeLine(self):
+        flag_changes = False
         for cur in self.getSectedRows() :
-            #print(cur.row())
             self.model.removeRow(cur.row())
+            flag_changes = True
+        if flag_changes :
+            self.unsaved_changes = True
 
     def markDone(self):
         for cur in self.getSectedRows():
