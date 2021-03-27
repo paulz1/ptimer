@@ -114,7 +114,7 @@ class PZtimer(QtGui.QWidget):
 
         self.tableView = QtGui.QTableView(self)
         self.setTableView()
-        self.loadCsv("/home/paul/.doit")
+        self.loadCsv(self.curConf.config["JobsFile"])
 
 # Buttons
 #         self.pushButtonLoad = QtGui.QPushButton(self)
@@ -244,7 +244,7 @@ class PZtimer(QtGui.QWidget):
                                           "It seems that you have unsaved changes (usually if you remove some rows). Do you want to save them?",
                                           QtGui.QMessageBox.Yes | QtGui.QMessageBox.No,
                                           QtGui.QMessageBox.Yes) == QtGui.QMessageBox.Yes :
-                self.writeCsv("/home/paul/.doit")
+                self.writeCsv(self.curConf.config["JobsFile"])
         QtGui.qApp.quit()
 
     def createMenu(self):
@@ -353,16 +353,16 @@ class PZtimer(QtGui.QWidget):
             print(self.model.item(cur.row(),0).data(QtCore.Qt.DisplayRole))
             if not str(self.model.item(cur.row(),0).data(QtCore.Qt.DisplayRole)).startswith("#") :
                 self.model.item(cur.row(),0).setData("#"+self.model.item(cur.row(),0).data(QtCore.Qt.DisplayRole),QtCore.Qt.EditRole)
-            self.writeCsv("/home/paul/.doit")
-            self.loadCsv("/home/paul/.doit")
+            self.writeCsv(self.curConf.config["JobsFile"])
+            self.loadCsv(self.curConf.config["JobsFile"])
 
     def markUnDone(self):
         selection=self.tableView.selectionModel().selectedRows()
         for cur in self.getSectedRows() :
             if str(self.model.item(cur.row(),0).data(QtCore.Qt.DisplayRole)).startswith("#") :
                 self.model.item(cur.row(),0).setData(self.model.item(cur.row(),0).data(QtCore.Qt.DisplayRole)[1:],QtCore.Qt.EditRole)
-            self.writeCsv("/home/paul/.doit")
-            self.loadCsv("/home/paul/.doit")
+            self.writeCsv(self.curConf.config["JobsFile"])
+            self.loadCsv(self.curConf.config["JobsFile"])
 
     def addLine(self):
         import datetime
@@ -376,7 +376,7 @@ class PZtimer(QtGui.QWidget):
         else :
             self.curConf.config["ShowDone"]=0
         self.curConf.writeShowDoneConf(self.curConf.config["ShowDone"])
-        self.loadCsv("/home/paul/.doit")
+        self.loadCsv(self.curConf.config["JobsFile"])
 
     def startJob(self):
         if (not self.myTimer.isActive ) :
@@ -421,8 +421,8 @@ class PZtimer(QtGui.QWidget):
             self.myTimer.isDone = False
             if (not self.myTimer.isLongRest) and ( self.current_job is not None ) :
                 self.model.item(self.current_job,1).setData(self.model.item(self.current_job,1).data(QtCore.Qt.DisplayRole).toString().toInt()[0]+1,QtCore.Qt.EditRole)
-                self.writeCsv("/home/paul/.doit")
-                self.loadCsv("/home/paul/.doit")
+                self.writeCsv(self.curConf.config["JobsFile"])
+                self.loadCsv(self.curConf.config["JobsFile"])
                 self.current_job = None
                 self.jobs_done+=1
             elif self.myTimer.isLongRest :
@@ -460,12 +460,12 @@ class PZtimer(QtGui.QWidget):
 #=========EVENTS
     @QtCore.pyqtSlot()
     def on_pushButtonWrite_clicked(self):
-        self.writeCsv("/home/paul/.doit")
+        self.writeCsv(self.curConf.config["JobsFile"])
 
     @QtCore.pyqtSlot()
     def on_pushButtonLoad_clicked(self):
         #self.loadCsv(self.fileName)
-        self.loadCsv("/home/paul/.doit")
+        self.loadCsv(self.curConf.config["JobsFile"])
 
     @QtCore.pyqtSlot()
     def on_pushButtonRemove_clicked(self):
@@ -503,7 +503,7 @@ class PZtimer(QtGui.QWidget):
 
     @QtCore.pyqtSlot()
     def on_dataChanged(self):
-        self.writeCsv("/home/paul/.doit")
+        self.writeCsv(self.curConf.config["JobsFile"])
 
 
 def main():
