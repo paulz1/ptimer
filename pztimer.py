@@ -194,22 +194,35 @@ class PZtimer(QtGui.QWidget):
         self.statusBar = QtGui.QStatusBar(self)
         self.statusBar.setSizeGripEnabled(False)
 
+
         # GridLayout Elements Begin
         self.buttonLayout = QtGui.QGridLayout(self)
 #         self.buttonLayout.addWidget(self.pushButtonLoad,0,0)
-        self.buttonLayout.addWidget(self.pushButtonAdd,0,0)
-        self.buttonLayout.addWidget(self.pushButtonDone,0,1)
-        self.buttonLayout.addWidget(self.pushButtonUnDone,0,2)
-        self.buttonLayout.addWidget(self.pushButtonRemove,0,3)
-        self.buttonLayout.addWidget(self.pushButtonWrite,0,4)
-        self.buttonLayout.addWidget(self.pushStartTimer,0,5)
-        self.buttonLayout.addWidget(self.pushStopTimer,0,6)
-        self.buttonLayout.addWidget(self.pushRestTimer,0,7)
+
+        button_bar = QtGui.QHBoxLayout()
+        button_bar.addWidget(self.pushButtonAdd)
+        button_bar.addWidget(self.pushButtonDone)
+        button_bar.addWidget(self.pushButtonUnDone)
+        button_bar.addWidget(self.pushButtonRemove)
+        button_bar.addWidget(self.pushButtonWrite)
+        button_bar.addWidget(self.pushStartTimer)
+        button_bar.addWidget(self.pushStopTimer)
+        button_bar.addWidget(self.pushRestTimer)
+        self.buttonLayout.addLayout(button_bar,0,0)
 
         self.buttonLayout.addWidget(self.tableView,1,0,1,8)
 
-        self.buttonLayout.addWidget(self.checkShowDone,2,0)
-        self.buttonLayout.addWidget(self.checkWoTask,2,1)
+        sublayout1 = QtGui.QVBoxLayout()
+        sublayout1.addWidget(self.checkShowDone)
+        sublayout1.addWidget(self.checkWoTask)
+        sublayout1.addStretch()
+
+
+        self.buttonLayout.addLayout(sublayout1,2,0)
+
+        # self.buttonLayout.addWidget(self.checkShowDone,2,1)
+        # self.addWidget(self.checkShowDone,2,1)
+        # self.buttonLayout.addWidget(self.checkWoTask,2,2)
         self.buttonLayout.addWidget(self.myTimer,2,5)
 
         self.buttonLayout.addWidget(self.statusBar,3,0,1,8)
