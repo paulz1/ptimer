@@ -17,7 +17,7 @@ class readConf():
         home = str(pathlib.Path.home())
         self.confFile=file_name
         self.config={}
-        default_values={"JobsFile":f"{home}/.doit","ShowDone":1,"WithoutTask":1}
+        default_values={"JobsFile":f"{home  }/.doit","ShowDone":1,"WithoutTask":1}
         self.Config = SafeConfigParser()
         if pathlib.Path(self.confFile).exists() :
             self.Config.read(self.confFile)
