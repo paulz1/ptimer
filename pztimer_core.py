@@ -35,16 +35,21 @@ log = sys.stdout
 MINUTE_LEN = 60
 
 class Timer(QtGui.QMainWindow):
+# class Timer(QtGui.QWidget):
     """
     The Timer class uses the QtTimer to keep count and to display the count-down timer.
     A systray is also implemented with the option to toggle the timer, pause/play, reset, settings and quit.
     """
     def __init__(self, timer_values, parent=None):
-        #QtGui.QWidget.__init__(self, parent)
+        # QtGui.QWidget.__init__(self, parent)
         #QtGui.QMainWindow.__init__(self, None, QtCore.Qt.WindowStaysOnTopHint|QtCore.Qt.FramelessWindowHint)
-        QtGui.QMainWindow.__init__(self, None, QtCore.Qt.WindowStaysOnTopHint)
+
+        # QtGui.QMainWindow.__init__(self, None, QtCore.Qt.WindowStaysOnTopHint)
+        QtGui.QMainWindow.__init__(self, parent, QtCore.Qt.WindowStaysOnTopHint)
+        # QtGui.QWidget.__init__(self, None, QtCore.Qt.WindowStaysOnTopHint)
         self.ui = Ui_Form()
         self.ui.setupUi(self)
+        print(type(self.ui))
 
         # Initialization
 

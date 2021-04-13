@@ -39,6 +39,7 @@ class Model(QtGui.QStandardItemModel):
             return QtGui.QStandardItemModel.data(self, index, role)
 
 class PZtimer(QtGui.QWidget):
+# class PZtimer(QtGui.QMainWindow):
 #class Example(QtGui.QMainWindow,form):
 
     def __init__(self):
@@ -50,6 +51,8 @@ class PZtimer(QtGui.QWidget):
         self.unsaved_changes = False
 
         self.initUI()
+        self.quitSc = QtGui.QShortcut(QtGui.QKeySequence('Ctrl+Q'), self)
+        self.quitSc.activated.connect(self.checkUnsaved_and_Quit)
 
     def closeEvent(self, event):
         """
@@ -114,7 +117,9 @@ class PZtimer(QtGui.QWidget):
 
         self.tableView = QtGui.QTableView(self)
         self.setTableView()
-        self.loadCsv("/home/paul/.doit")
+        # self.tableView.setSizePolicy(QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Minimum)
+        self.tableView.setSizePolicy(QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Expanding)
+        self.loadCsv(self.curConf.config["JobsFile"])
 
 # Buttons
 #         self.pushButtonLoad = QtGui.QPushButton(self)
@@ -187,34 +192,51 @@ class PZtimer(QtGui.QWidget):
 
 # End of Buttons
 
-        #self.myTimer = Timer([1,2])
-        self.myTimer = Timer([25,5])
-        self.myTimer.isLongRest = False
-
         self.statusBar = QtGui.QStatusBar(self)
         self.statusBar.setSizeGripEnabled(False)
         self.statusBar.showMessage(self.curConf.config["JobsFile"])
 
+
         # GridLayout Elements Begin
         self.buttonLayout = QtGui.QGridLayout(self)
 #         self.buttonLayout.addWidget(self.pushButtonLoad,0,0)
-        self.buttonLayout.addWidget(self.pushButtonAdd,0,0)
-        self.buttonLayout.addWidget(self.pushButtonDone,0,1)
-        self.buttonLayout.addWidget(self.pushButtonUnDone,0,2)
-        self.buttonLayout.addWidget(self.pushButtonRemove,0,3)
-        self.buttonLayout.addWidget(self.pushButtonWrite,0,4)
-        self.buttonLayout.addWidget(self.pushStartTimer,0,5)
-        self.buttonLayout.addWidget(self.pushStopTimer,0,6)
-        self.buttonLayout.addWidget(self.pushRestTimer,0,7)
+
+        #self.myTimer = Timer([1,2])
+        self.myTimer = Timer([25,5])
+        # self.myTimer.setSizePolicy(QtGui.QSizePolicy.Minimum, QtGui.QSizePolicy.Minimum)
+        self.myTimer.isLongRest = False
+
+
+        button_bar = QtGui.QHBoxLayout()
+        button_bar.addWidget(self.pushButtonAdd)
+        button_bar.addWidget(self.pushButtonDone)
+        button_bar.addWidget(self.pushButtonUnDone)
+        button_bar.addWidget(self.pushButtonRemove)
+        button_bar.addWidget(self.pushButtonWrite)
+        button_bar.addWidget(self.pushStartTimer)
+        button_bar.addWidget(self.pushStopTimer)
+        button_bar.addWidget(self.pushRestTimer)
+        button_bar.addWidget(self.myTimer)
+        self.buttonLayout.addLayout(button_bar,0,0)
 
         self.buttonLayout.addWidget(self.tableView,1,0,1,8)
 
-        self.buttonLayout.addWidget(self.checkShowDone,2,0)
-        self.buttonLayout.addWidget(self.checkWoTask,2,1)
-        self.buttonLayout.addWidget(self.myTimer,2,5)
+
+        sublayout1 = QtGui.QVBoxLayout()
+        sublayout1.addWidget(self.checkShowDone)
+        sublayout1.addWidget(self.checkWoTask)
+        # sublayout1.addStretch()
+        # sublayout1.setSizePolicy(QtGui.QSizePolicy.Minimum, QtGui.QSizePolicy.Minimum)
+        self.buttonLayout.addLayout(sublayout1,2,0)
+
+        # self.buttonLayout.addWidget(self.checkShowDone,2,1)
+        # self.buttonLayout.addWidget(self.checkWoTask,2,2)
+
+        # self.myTimer.setSizePolicy(QtGui.QSizePolicy.Fixed, QtGui.QSizePolicy.Fixed)
+        # self.buttonLayout.addWidget(self.myTimer,2,5)
+        # self.buttonLayout.addWidget(self.myTimer,0,5)
 
         self.buttonLayout.addWidget(self.statusBar,3,0,1,8)
-#         self.pushRestTimer.setStyleSheet("QWidget { background-color: #aeadac }")
         self.pushRestTimer.setEnabled(False)
         # GridLayout Elements End
 
@@ -245,7 +267,7 @@ class PZtimer(QtGui.QWidget):
                                           "It seems that you have unsaved changes (usually if you remove some rows). Do you want to save them?",
                                           QtGui.QMessageBox.Yes | QtGui.QMessageBox.No,
                                           QtGui.QMessageBox.Yes) == QtGui.QMessageBox.Yes :
-                self.writeCsv("/home/paul/.doit")
+                self.writeCsv(self.curConf.config["JobsFile"])
         QtGui.qApp.quit()
 
     def createMenu(self):
@@ -296,21 +318,23 @@ class PZtimer(QtGui.QWidget):
         self.model.clear()
 
     def setTableView(self):
-        #self.tableView = QtGui.QTableWidget(self)
         self.tableView.setModel(self.model)
-        self.tableView.setColumnWidth(0,275)
-        self.tableView.setColumnWidth(1,75)
-        self.tableView.setColumnWidth(2,75)
-        self.tableView.setColumnWidth(2,125)
+
+        self.tableView.setColumnWidth(0,295)
+        self.tableView.setColumnWidth(1,45)
+        self.tableView.setColumnWidth(2,100)
+        self.tableView.setColumnWidth(3,110)
         self.tableView.horizontalHeader().setStretchLastSection(True)
-        #self.tableView.setHorizontalHeaderLabels(['a', 'b', 'c', 'd', 'e'])
+
+        # self.tableView.verticalHeader().setVisible(False)
 
     def loadCsv(self, fileName):
         self.clearModel()
         if not os.path.isfile(fileName) :
             open(fileName, 'a').close()
-        # fileInput=open(fileName, "rb") # old py2
         fileInput=open(fileName, "r")
+
+        visibleRowCount=0
         for row in csv.reader(fileInput,delimiter=';'):
             if ''.join(row).strip() :
                 items = [
@@ -323,7 +347,9 @@ class PZtimer(QtGui.QWidget):
                 self.tableView.setRowHidden(self.model.rowCount()-1,True)
             else :
                 self.model.appendRow(items)
+                visibleRowCount+=1
         self.model.setHorizontalHeaderLabels(self.colnames)
+        self.model.setVerticalHeaderLabels( [f"{x}" for x in range(1,visibleRowCount+1)] )
         self.setTableView()
 
     def writeCsv(self, fileName):
@@ -359,16 +385,16 @@ class PZtimer(QtGui.QWidget):
             print(self.model.item(cur.row(),0).data(QtCore.Qt.DisplayRole))
             if not str(self.model.item(cur.row(),0).data(QtCore.Qt.DisplayRole)).startswith("#") :
                 self.model.item(cur.row(),0).setData("#"+self.model.item(cur.row(),0).data(QtCore.Qt.DisplayRole),QtCore.Qt.EditRole)
-            self.writeCsv("/home/paul/.doit")
-            self.loadCsv("/home/paul/.doit")
+            self.writeCsv(self.curConf.config["JobsFile"])
+            self.loadCsv(self.curConf.config["JobsFile"])
 
     def markUnDone(self):
         selection=self.tableView.selectionModel().selectedRows()
         for cur in self.getSectedRows() :
             if str(self.model.item(cur.row(),0).data(QtCore.Qt.DisplayRole)).startswith("#") :
                 self.model.item(cur.row(),0).setData(self.model.item(cur.row(),0).data(QtCore.Qt.DisplayRole)[1:],QtCore.Qt.EditRole)
-            self.writeCsv("/home/paul/.doit")
-            self.loadCsv("/home/paul/.doit")
+            self.writeCsv(self.curConf.config["JobsFile"])
+            self.loadCsv(self.curConf.config["JobsFile"])
 
     def addLine(self):
         import datetime
@@ -382,7 +408,7 @@ class PZtimer(QtGui.QWidget):
         else :
             self.curConf.config["ShowDone"]=0
         self.curConf.writeShowDoneConf(self.curConf.config["ShowDone"])
-        self.loadCsv("/home/paul/.doit")
+        self.loadCsv(self.curConf.config["JobsFile"])
 
     def startJob(self):
         if (not self.myTimer.isActive ) :
@@ -427,8 +453,8 @@ class PZtimer(QtGui.QWidget):
             self.myTimer.isDone = False
             if (not self.myTimer.isLongRest) and ( self.current_job is not None ) :
                 self.model.item(self.current_job,1).setData(self.model.item(self.current_job,1).data(QtCore.Qt.DisplayRole).toString().toInt()[0]+1,QtCore.Qt.EditRole)
-                self.writeCsv("/home/paul/.doit")
-                self.loadCsv("/home/paul/.doit")
+                self.writeCsv(self.curConf.config["JobsFile"])
+                self.loadCsv(self.curConf.config["JobsFile"])
                 self.current_job = None
                 self.jobs_done+=1
             elif self.myTimer.isLongRest :
@@ -466,12 +492,12 @@ class PZtimer(QtGui.QWidget):
 #=========EVENTS
     @QtCore.pyqtSlot()
     def on_pushButtonWrite_clicked(self):
-        self.writeCsv("/home/paul/.doit")
+        self.writeCsv(self.curConf.config["JobsFile"])
 
     @QtCore.pyqtSlot()
     def on_pushButtonLoad_clicked(self):
         #self.loadCsv(self.fileName)
-        self.loadCsv("/home/paul/.doit")
+        self.loadCsv(self.curConf.config["JobsFile"])
 
     @QtCore.pyqtSlot()
     def on_pushButtonRemove_clicked(self):
@@ -509,7 +535,7 @@ class PZtimer(QtGui.QWidget):
 
     @QtCore.pyqtSlot()
     def on_dataChanged(self):
-        self.writeCsv("/home/paul/.doit")
+        self.writeCsv(self.curConf.config["JobsFile"])
 
 
 def main():
