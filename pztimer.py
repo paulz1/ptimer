@@ -203,7 +203,8 @@ class PZtimer(QtGui.QWidget):
 
         #self.myTimer = Timer([1,2])
         self.myTimer = Timer([25,5])
-        self.myTimer.setStyleSheet("QWidget{background-color:white}")        
+        self.myTimer.setStyleSheet("QWidget{background-color:white}")
+        self.myTimer.resize(65,30)
         self.myTimer.setSizePolicy(QtGui.QSizePolicy.Minimum, QtGui.QSizePolicy.Minimum)
         self.myTimer.isLongRest = False
 
