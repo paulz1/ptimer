@@ -42,9 +42,9 @@ class Timer(QtGui.QMainWindow):
     """
     def __init__(self, timer_values, parent=None):
         # QtGui.QWidget.__init__(self, parent)
-        #QtGui.QMainWindow.__init__(self, None, QtCore.Qt.WindowStaysOnTopHint|QtCore.Qt.FramelessWindowHint)
+        # QtGui.QMainWindow.__init__(self, None, QtCore.Qt.WindowStaysOnTopHint|QtCore.Qt.FramelessWindowHint)
 
-        # QtGui.QMainWindow.__init__(self, None, QtCore.Qt.WindowStaysOnTopHint)
+        # QtGui.QMainWindow.__init__(self, None)
         QtGui.QMainWindow.__init__(self, parent, QtCore.Qt.WindowStaysOnTopHint)
         # QtGui.QWidget.__init__(self, None, QtCore.Qt.WindowStaysOnTopHint)
         self.ui = Ui_Form()

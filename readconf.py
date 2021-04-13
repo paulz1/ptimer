@@ -40,5 +40,11 @@ class readConf():
             with open(self.confFile, 'w') as configfile:
                 self.Config.write(configfile)
 
+    def writeWoTask(self,newWithoutTask):
+        if self.config["conf_file_exists"] :
+            self.Config.set("Options","WithoutTask",str(newShowDone))
+            with open(self.confFile, 'w') as configfile:
+                self.Config.write(configfile)
+
 if __name__ == '__main__':
     pass

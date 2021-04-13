@@ -203,8 +203,10 @@ class PZtimer(QtGui.QWidget):
 
         #self.myTimer = Timer([1,2])
         self.myTimer = Timer([25,5])
-        # self.myTimer.setSizePolicy(QtGui.QSizePolicy.Minimum, QtGui.QSizePolicy.Minimum)
+        self.myTimer.setStyleSheet("QWidget{background-color:white}")        
+        self.myTimer.setSizePolicy(QtGui.QSizePolicy.Minimum, QtGui.QSizePolicy.Minimum)
         self.myTimer.isLongRest = False
+
 
 
         button_bar = QtGui.QHBoxLayout()
@@ -408,6 +410,13 @@ class PZtimer(QtGui.QWidget):
         else :
             self.curConf.config["ShowDone"]=0
         self.curConf.writeShowDoneConf(self.curConf.config["ShowDone"])
+
+        if  self.checkWoTask.checkState() == QtCore.Qt.Checked :
+            self.curConf.config["WithoutTask"]=1
+        else :
+            self.curConf.config["WithoutTask"]=0
+        self.curConf.writeWoTask(self.curConf.config["WithoutTask"])
+
         self.loadCsv(self.curConf.config["JobsFile"])
 
     def startJob(self):
@@ -417,11 +426,16 @@ class PZtimer(QtGui.QWidget):
                 self.myTimer.startJobTimer()
                 message = "Starting Long Rest :-) "
             elif self.myTimer.working_type!=1 :
-                message = "No job was selected, nothing to start"
-                for cur in self.getSectedRows() :
-                    self.current_job = cur.row()
+                if int(self.curConf.config["WithoutTask"])==1 :
+                    self.current_job = -1
                     self.myTimer.startJobTimer()
-                    message = "Starting job : " + str(cur.row())
+                    message = "Starting job without task"
+                else :
+                    message = "No job was selected, nothing to start"
+                    for cur in self.getSectedRows() :
+                        self.current_job = cur.row()
+                        self.myTimer.startJobTimer()
+                        message = "Starting job : " + str(cur.row())
             else :
                 message = "You are resting now, could not start new job"
         else :
