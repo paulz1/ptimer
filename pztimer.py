@@ -193,6 +193,7 @@ class PZtimer(QtGui.QWidget):
 
         self.statusBar = QtGui.QStatusBar(self)
         self.statusBar.setSizeGripEnabled(False)
+        self.statusBar.showMessage(self.curConf.config["JobsFile"])
 
         # GridLayout Elements Begin
         self.buttonLayout = QtGui.QGridLayout(self)
@@ -264,7 +265,12 @@ class PZtimer(QtGui.QWidget):
         # self.quitAction = QtGui.QAction("&Quit", self,
         #         triggered=QtGui.qApp.quit)
         self.quitAction = QtGui.QAction("&Quit", self)
+        # self.quitAction.setShortcut(QShortcut(QtGui.QKeySequence(QtCore.Qt.CTRL + QtCore.Qt.Key_L),
+        #             self, self.focusOnTree)
+        seq = QtGui.QKeySequence("Ctrl+q")
+        self.quitAction.setShortcut(seq)
         self.quitAction.triggered.connect(self.checkUnsaved_and_Quit)
+        self.quitAction.activated.connect(self.checkUnsaved_and_Quit)
 
         self.contextMenu.addAction(self.toggleWindowAction)
 #         self.contextMenu.addAction(self.toggleTimerAction)
