@@ -296,8 +296,10 @@ if __name__ == "__main__":
         QtGui.QMessageBox.critical(None, "Systray",
                 "No system tray on this system. Fail")
         sys.exit(1)
-    QtGui.QApplication.setQuitOnLastWindowClosed(False)
+    # QtGui.QApplication.setQuitOnLastWindowClosed(False)
+    QtGui.QApplication.setQuitOnLastWindowClosed(True)
     timerList = Str2Num(sys.argv[1:])
     #myapp = Timer(timerList)
     myapp = Timer([25,5])
+    myapp.show()
     sys.exit(app.exec_())

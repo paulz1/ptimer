@@ -13,7 +13,7 @@ class Ui_Form(object):
     def setupUi(self, Form):
         Form.setObjectName("Form")
 
-        # Form.resize(14, 35)
+        Form.resize(65, 30)
         self.lcdNumber = QtGui.QLCDNumber(Form)
         self.lcdNumber.setGeometry(QtCore.QRect(0, 0, 65, 30))
         # self.lcdNumber.setObjectName("lcdNumber")
