@@ -17,7 +17,7 @@ class readConf():
         home = str(pathlib.Path.home())
         self.confFile=file_name
         self.config={}
-        default_values={"JobsFile":f"{home  }/.doit","ShowDone":1,"WithoutTask":1}
+        default_values={"JobsFile":f"{home}/.doit","ShowDone":1,"WithoutTask":1}
         self.Config = SafeConfigParser()
         if pathlib.Path(self.confFile).exists() :
             self.Config.read(self.confFile)
@@ -37,7 +37,7 @@ class readConf():
     def writeShowDoneConf(self,newShowDone):
         if self.config["conf_file_exists"] :
             self.Config.set("Options","ShowDone",str(newShowDone))
-            with open(self.confFile, 'wb') as configfile:
+            with open(self.confFile, 'w') as configfile:
                 self.Config.write(configfile)
 
 if __name__ == '__main__':

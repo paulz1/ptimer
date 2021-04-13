@@ -39,6 +39,7 @@ class Model(QtGui.QStandardItemModel):
             return QtGui.QStandardItemModel.data(self, index, role)
 
 class PZtimer(QtGui.QWidget):
+# class PZtimer(QtGui.QMainWindow):
 #class Example(QtGui.QMainWindow,form):
 
     def __init__(self):
@@ -50,6 +51,8 @@ class PZtimer(QtGui.QWidget):
         self.unsaved_changes = False
 
         self.initUI()
+        self.quitSc = QtGui.QShortcut(QtGui.QKeySequence('Ctrl+Q'), self)
+        self.quitSc.activated.connect(self.checkUnsaved_and_Quit)
 
     def closeEvent(self, event):
         """
@@ -114,6 +117,8 @@ class PZtimer(QtGui.QWidget):
 
         self.tableView = QtGui.QTableView(self)
         self.setTableView()
+        # self.tableView.setSizePolicy(QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Minimum)
+        self.tableView.setSizePolicy(QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Expanding)
         self.loadCsv(self.curConf.config["JobsFile"])
 
 # Buttons
@@ -187,10 +192,6 @@ class PZtimer(QtGui.QWidget):
 
 # End of Buttons
 
-        #self.myTimer = Timer([1,2])
-        self.myTimer = Timer([25,5])
-        self.myTimer.isLongRest = False
-
         self.statusBar = QtGui.QStatusBar(self)
         self.statusBar.setSizeGripEnabled(False)
 
@@ -198,6 +199,12 @@ class PZtimer(QtGui.QWidget):
         # GridLayout Elements Begin
         self.buttonLayout = QtGui.QGridLayout(self)
 #         self.buttonLayout.addWidget(self.pushButtonLoad,0,0)
+
+        #self.myTimer = Timer([1,2])
+        self.myTimer = Timer([25,5])
+        # self.myTimer.setSizePolicy(QtGui.QSizePolicy.Minimum, QtGui.QSizePolicy.Minimum)
+        self.myTimer.isLongRest = False
+
 
         button_bar = QtGui.QHBoxLayout()
         button_bar.addWidget(self.pushButtonAdd)
@@ -208,25 +215,27 @@ class PZtimer(QtGui.QWidget):
         button_bar.addWidget(self.pushStartTimer)
         button_bar.addWidget(self.pushStopTimer)
         button_bar.addWidget(self.pushRestTimer)
+        button_bar.addWidget(self.myTimer)
         self.buttonLayout.addLayout(button_bar,0,0)
 
         self.buttonLayout.addWidget(self.tableView,1,0,1,8)
 
+
         sublayout1 = QtGui.QVBoxLayout()
         sublayout1.addWidget(self.checkShowDone)
         sublayout1.addWidget(self.checkWoTask)
-        sublayout1.addStretch()
-
-
+        # sublayout1.addStretch()
+        # sublayout1.setSizePolicy(QtGui.QSizePolicy.Minimum, QtGui.QSizePolicy.Minimum)
         self.buttonLayout.addLayout(sublayout1,2,0)
 
         # self.buttonLayout.addWidget(self.checkShowDone,2,1)
-        # self.addWidget(self.checkShowDone,2,1)
         # self.buttonLayout.addWidget(self.checkWoTask,2,2)
-        self.buttonLayout.addWidget(self.myTimer,2,5)
+
+        # self.myTimer.setSizePolicy(QtGui.QSizePolicy.Fixed, QtGui.QSizePolicy.Fixed)
+        # self.buttonLayout.addWidget(self.myTimer,2,5)
+        # self.buttonLayout.addWidget(self.myTimer,0,5)
 
         self.buttonLayout.addWidget(self.statusBar,3,0,1,8)
-#         self.pushRestTimer.setStyleSheet("QWidget { background-color: #aeadac }")
         self.pushRestTimer.setEnabled(False)
         # GridLayout Elements End
 
@@ -303,21 +312,23 @@ class PZtimer(QtGui.QWidget):
         self.model.clear()
 
     def setTableView(self):
-        #self.tableView = QtGui.QTableWidget(self)
         self.tableView.setModel(self.model)
-        self.tableView.setColumnWidth(0,275)
-        self.tableView.setColumnWidth(1,75)
-        self.tableView.setColumnWidth(2,75)
-        self.tableView.setColumnWidth(2,125)
+
+        self.tableView.setColumnWidth(0,295)
+        self.tableView.setColumnWidth(1,45)
+        self.tableView.setColumnWidth(2,100)
+        self.tableView.setColumnWidth(3,110)
         self.tableView.horizontalHeader().setStretchLastSection(True)
-        #self.tableView.setHorizontalHeaderLabels(['a', 'b', 'c', 'd', 'e'])
+
+        # self.tableView.verticalHeader().setVisible(False)
 
     def loadCsv(self, fileName):
         self.clearModel()
         if not os.path.isfile(fileName) :
             open(fileName, 'a').close()
-        # fileInput=open(fileName, "rb") # old py2
         fileInput=open(fileName, "r")
+
+        visibleRowCount=0
         for row in csv.reader(fileInput,delimiter=';'):
             if ''.join(row).strip() :
                 items = [
@@ -330,7 +341,9 @@ class PZtimer(QtGui.QWidget):
                 self.tableView.setRowHidden(self.model.rowCount()-1,True)
             else :
                 self.model.appendRow(items)
+                visibleRowCount+=1
         self.model.setHorizontalHeaderLabels(self.colnames)
+        self.model.setVerticalHeaderLabels( [f"{x}" for x in range(1,visibleRowCount+1)] )
         self.setTableView()
 
     def writeCsv(self, fileName):
